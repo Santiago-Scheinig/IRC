@@ -1,0 +1,4 @@
+#ifndef COMMANDREGISTRY_HPP
+# define COMMANDREGISTRY_HPP
+
+#endif
