@@ -1,9 +1,7 @@
 # Architecture & Theory
 
 This document explains *why* the codebase is shaped the way it is: how IRC
-itself works, and what job each class is theoretically doing. Read this
-before writing any `.hpp` — the goal is that you and your coworkers derive
-similar headers independently, then compare.
+itself works, and what job each class is theoretically doing.
 
 ---
 
@@ -26,8 +24,7 @@ connection, and from then on the two sides exchange lines terminated by
 Numerics matter more than they look: `433` isn't magic, it always means
 *nickname in use*. The server doesn't invent prose for errors — it sends a
 number plus a conventional message, and the client software decides how to
-display it. That's why `Replies` exists as a dedicated formatter: every
-error/success in the protocol is a numeric, not a sentence you write.
+display it.
 
 ### Connection lifecycle
 
@@ -53,10 +50,6 @@ sequenceDiagram
     S-->>C: connection closed
 ```
 
-This is exactly what `Client::RegistrationState` models: a small state
-machine that gates whether commands beyond `PASS`/`NICK`/`USER` are even
-allowed to run.
-
 ### Why poll() and non-blocking sockets
 
 A single-threaded server can't afford a blocking `recv()` — it would freeze
@@ -64,7 +57,7 @@ every other client while waiting on one. `poll()` instead asks the kernel
 "which of these file descriptors have data ready?" and only touches the
 ones that do. This has a consequence for design: a `recv()` call is not
 guaranteed to return one full line, or even a full line at all — it might
-return half of one, or three lines at once. That's why `Client` keeps a
+return half of one, or three lines at once. That's why its good to keep a
 persistent `inputBuffer`: incomplete data from one `poll()` cycle has to
 survive until the rest arrives on a later cycle.
 
@@ -102,7 +95,7 @@ a giant `if/else` chain touched by everyone. Each concrete command (`JOIN`,
 `KICK`, `PRIVMSG`...) is a class implementing one `execute()` method. The
 design question worth discussing as a group: what does *every* command
 need access to, to do its job? That answer becomes your `execute()`
-signature — get it right once, because every command depends on it.
+signature.
 
 ### CommandRegistry — a lookup table, not a decision-maker
 Maps a verb name to the object that handles it. It doesn't know what any
@@ -119,7 +112,7 @@ irreducibly its own.
 Membership, operator list, topic, modes. The interesting design decision:
 does broadcasting logic live *in* Channel, or in whatever calls it? Putting
 it inside Channel means "who receives this message" is decided in exactly
-one place — worth doing on purpose rather than by accident.
+one place (worth taking notice).
 
 ### Server — orchestrator, not accumulator
 Owns the poll loop and the top-level collections (clients, channels). It
@@ -132,10 +125,9 @@ Parses and validates argv once, at startup, so nothing downstream has to
 second-guess whether the port or password is well-formed.
 
 ### Replies — pure functions, deliberately stateless
-A namespace, not a class with state, because it has nothing to remember
+An utility class with no memeber variables, because it has nothing to remember
 between calls — formatting a numeric reply doesn't depend on anything but
-its arguments. Worth discussing: what would it mean for this to have
-state, and why is that a smell here?
+its arguments.
 
 ### How the pieces relate
 
