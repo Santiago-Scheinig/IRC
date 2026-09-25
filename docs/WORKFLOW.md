@@ -1,19 +1,11 @@
 # Git Workflow
 
-A practical rulebook for committing and pushing as a three-person team,
-written so it stays easy even when the habit is new.
-
 ---
 
-## 1. The one-object-per-commit rule
+## 1. One-object-per-commit
 
-**Default rule:** one commit = one class (its `.hpp` + its `.cpp`
+**Default:** one commit = one class (its `.hpp` + its `.cpp`
 together), or one command file, or one clearly indivisible fix.
-
-Why the header and its `.cpp` count as *one* commit and not two: they're
-not independently meaningful. A `.hpp` with no implementation doesn't
-compile into anything useful, and a `.cpp` without its header doesn't
-compile at all. The "one object" unit is the pair, not the file.
 
 ```
 git add include/Channel.hpp src/Channel.cpp
