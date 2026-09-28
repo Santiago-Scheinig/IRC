@@ -3,17 +3,6 @@
 
 //IrcMessage
 //Representa una línea IRC ya separada por el parser.
-#include <string>
-#include <vector>
-
-struct IrcMessage
-{
-	std::string					prefix;
-	std::string					command;
-	std::vector<std::string>	params;
-	std::string					trailing;
-	bool						hasTrailing;
-};
 
 class Parser
 {
