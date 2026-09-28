@@ -9,7 +9,7 @@ int	main(int argc, char** argv)
 	try
 	{
 		Config	config(argc, argv);
-		Server	server(config.getPort(), config.getPassword());
+		Server	server(config.getPort(), config.getPasswd());
 
 		server.run();
 	}
