@@ -1,8 +1,12 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
-# include <csignal>
 # include <string>
+# include <cctype>
+# include <csignal>
+# include <iostream>
+# include <sstream>
+# incldue <stdexcept>
 
 class Config {
     private:
@@ -10,19 +14,20 @@ class Config {
         std::string         _password;
 
                             Config();
-                            Config(const Config &other);
-        Config              &operator=(const Config &other);
+                            Config(const Config &other) throw ;
+        Config              &operator=(const Config &other) throw ;
+                            ~Config() throw;
 
-        bool                parsePort(const std::string &s);
-        bool                parsePassword(const std::string &s);
-
-    public:
-                            Config(int argc, char **argv);
-                            ~Config();
-
-        const std::string   &getPassword() const;
-        int                 getPort() const;
+        void                parsePort(const std::string &s);
+        void                parsePassword(const std::string &s);
 
         static void         initSignalHandler();
+    
+    public:
+                            Config(int argc, char **argv);
+
+        const std::string   &getPassword() throw const;
+        int                 getPort() throw const;
+
 }
 #endif
