@@ -1,38 +1,38 @@
 #ifndef PARSER_HPP
 # define PARSER_HPP
 
-//IrcMessage
-//Representa una línea IRC ya separada por el parser.
+#include "Message.hpp"
+#include <string>
+#include <vector>
 
 class Parser
 {
+	public:
+		enum Parse_e			//e_num creado para identifiar cada salida de parser
+		{
+			PARSE_INCOMPLETE,
+			PARSE_MESSAGE,
+			PARSE_INVALID
+		};
+
+		Parser();
+		~Parser();
+
+		Parse_e processInput(const std::string &data, Message &message);
+
 	private:
 		Parser(const Parser &other);
 		Parser &operator=(const Parser &other);
 
-	public:
-		Parser();
-		~Parser();
+		std::string _inputBuffer;
+
+		Parse_e _parseLine(const std::string &line, Message &message) const;
+		Parse_e _readPrefix(const std::string &line, std::size_t &pos, std::string &prefix) const;
+		Parse_e _readCommand(const std::string &line, std::size_t &pos, std::string &cmd) const;
+		Parse_e _readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing) const;
+		void _skipSpaces(const std::string &line, std::size_t &pos) const;
+		std::string _toUpper(const std::string &text) const;
+
 };
-
-
-/*PRIVMSG #general :Hola a todos
-
-command  = "PRIVMSG"
-params   = ["#general"]
-trailing = "Hola a todos"
-
-IrcParser
-Responsable únicamente de convertir texto IRC en IrcMessage.
-
-No debe conocer clientes, canales ni permisos.
-
-Debe:
-
-reconocer \r\n;
-conservar fragmentos incompletos;
-aceptar varias líneas en un mismo buffer;
-conservar los espacios del parámetro trailing;
-normalizar el comando a mayúsculas.*/
 
 #endif
