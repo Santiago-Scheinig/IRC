@@ -87,3 +87,27 @@ void Server::run(){
 	std::cout << "Server shutting down." << std::endl;
 }
 
+void Server::_handleClient(int fd){
+	(void)fd;
+
+	Message message;
+
+	//data = recibirBytesDelCliente();
+	std::string data(":nick!user@host PRIVMSG #general :Hola\r\n");
+
+	Parser clientParser;
+	Parser::Parse_e result = clientParser.processInput(data, message);
+
+	if (result == Parser::PARSE_INCOMPLETE)
+	{
+		// Esperar más bytes.
+	}
+	else if (result == Parser::PARSE_INVALID)
+	{
+		// Rechazar la línea o cerrar el cliente.
+	}
+	else if (result == Parser::PARSE_MESSAGE)
+	{
+		// Enviar message al CommandRegistry.
+	}
+}

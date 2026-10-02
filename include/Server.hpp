@@ -15,6 +15,10 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 
+#include "Message.hpp"
+#include "Parser.hpp"
+
+
 extern volatile sig_atomic_t	g_running;
 
 class Client;
