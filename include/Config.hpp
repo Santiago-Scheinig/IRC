@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Config.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/10/16 18:23:47 by sscheini          #+#    #+#             */
+/*   Updated: 2026/10/16 19:22:49 by sscheini         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
@@ -6,7 +18,7 @@
 # include <csignal>
 # include <iostream>
 # include <sstream>
-# incldue <stdexcept>
+# include "IRCException.hpp"
 
 class Config {
     private:
@@ -14,9 +26,9 @@ class Config {
         std::string         _password;
 
                             Config();
-                            Config(const Config &other) throw ;
-        Config              &operator=(const Config &other) throw ;
-                            ~Config() throw;
+                            Config(const Config &other);
+        Config              &operator=(const Config &other);
+                            ~Config() throw();
 
         void                parsePort(const std::string &s);
         void                parsePassword(const std::string &s);
@@ -26,8 +38,9 @@ class Config {
     public:
                             Config(int argc, char **argv);
 
-        const std::string   &getPassword() throw const;
-        int                 getPort() throw const;
+        const std::string   &getPassword() throw() const;
+        int                 getPort() throw() const;
 
-}
+};
+
 #endif
