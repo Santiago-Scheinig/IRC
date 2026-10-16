@@ -99,7 +99,7 @@ flowchart LR
 Day-to-day commands:
 
 ```bash
-git checkout main
+git checkout pre-dev
 git pull
 git checkout -b feature/14-channel-broadcast
 
@@ -120,7 +120,7 @@ CI will fail and block review, which wastes a round trip.
 
 ## 4. A few habits that prevent most pain
 
-- **Pull `main` before branching**, every time, so your branch starts from
+- **Pull `pre-dev` before branching**, every time, so your branch starts from
   the latest merged contract.
 - **Small, frequent commits beat one giant commit at the end** — not just
   for review, but because a bad commit is easy to `git revert` when it's
