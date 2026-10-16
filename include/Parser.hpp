@@ -16,6 +16,9 @@ class Parser
 		};
 
 		Parser();
+	/**
+	* We are missing the other OCF functions, its normative.
+	*/
 		~Parser();
 
 		Parse_e processInput(const std::string &data, Message &message);

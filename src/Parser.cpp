@@ -2,14 +2,26 @@
 
 #include <cctype>
 
+/**
+ * Should this exist? Or should we make it private?
+ */
 Parser::Parser() : _inputBuffer()
 {
 }
 
-Parser::~Parser()
-{
-}
+/**
+ * We are missing the other OCF functions, its normative.
+ */
 
+Parser::~Parser() {}
+
+/**
+ * We are using enum to verify correct execution when we could use exceptions instead.
+ * Easier to handle, better responsability division when handlining errors.
+ * Harder to spot, flaging functions with throw() helps identify non-throwable functions.
+ * This way, instead of returning an enum to verify, we can return a message and let the exceptions
+ * handle the errors, if any.
+ */
 Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
 {
 	std::size_t	end;
@@ -34,6 +46,9 @@ void Parser::_skipSpaces(const std::string &line, std::size_t &pos) const
 		pos++;
 }
 
+/**
+ * We can use exceptions, and turn this function into a void return, specially since is const.
+ */
 Parser::Parse_e Parser::_readPrefix(const std::string &line, std::size_t &pos, std::string &prefix) const
 {
 	std::size_t	space;
@@ -48,6 +63,9 @@ Parser::Parse_e Parser::_readPrefix(const std::string &line, std::size_t &pos, s
 	return PARSE_MESSAGE;
 }
 
+/**
+ * We can use exceptions, and turn this function into a void return, specially since is const.
+ */
 Parser::Parse_e Parser::_readCommand(const std::string &line, std::size_t &pos, std::string &cmd) const
 {
 	std::size_t	space;
@@ -69,6 +87,9 @@ Parser::Parse_e Parser::_readCommand(const std::string &line, std::size_t &pos, 
 	return PARSE_MESSAGE;
 }
 
+/**
+ * We can use exceptions, and turn this function into a void return, specially since is const.
+ */
 Parser::Parse_e Parser::_readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing) const
 {
 	std::size_t	space;
@@ -96,6 +117,9 @@ Parser::Parse_e Parser::_readParams(const std::string &line, std::size_t &pos, s
 	return PARSE_MESSAGE; // cero parametros tambien puede ser sintacticamente valido.
 }
 
+/**
+ * We can use exceptions, and turn this function into a void return, specially since is const.
+ */
 Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) const
 {
 	std::size_t	pos = 0;		//en cada funcion actualizamos pos para mantener el index en line actualizado correctamente
@@ -113,10 +137,13 @@ Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) co
 		return PARSE_INVALID;
 	if (_readParams(line, pos, params, trailing, hasTrailing) == PARSE_INVALID)
 		return PARSE_INVALID;
-	message = Message(prefix, command, params, trailing, hasTrailing);
+	message = Message(std::string input);
 	return PARSE_MESSAGE;
 }
 
+/**
+ * Pretty sure there's already a function std:: that does this.
+ */
 std::string Parser::_toUpper(const std::string &cmd) const
 {
 	std::string tmp = cmd;
