@@ -2,6 +2,7 @@
 # define CLIENT_HPP
 
 #include <string>
+#include "Parser.hpp"
 
 class Client {
 	private:
@@ -19,10 +20,9 @@ class Client {
 		~Client() {};
 
 		int getFd() const;
-		void appendInput(const std::string &data);
-		std::string extractMessage();
+		void Client::appendInput(const std::string &data);
+		std::string extractMessage(const std::string &data, Message &message);
 		void queueOutput(const std::string &msg);
-
 };
 
 #endif

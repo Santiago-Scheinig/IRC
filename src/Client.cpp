@@ -41,15 +41,13 @@ void Client::appendInput(const std::string &data) {
 	this->_inputBuffer += data;
 }
 
-std::string Client::extractMessage() {
+std::string Client::extractMessage(const std::string &data, Message &message) {
 	size_t pos = _inputBuffer.find("\r\n", 0);
 	if (pos == std::string::npos)
-		return "";
-	else {
-		std::string command = _inputBuffer.substr(0, pos);
-		_inputBuffer.erase(0, pos + 1);
-		return command;
-	}
+		return ""; //PARSE_INCOMPLETE;
+	std::string command = _inputBuffer.substr(0, pos);
+	_inputBuffer.erase(0, pos + 2);
+	return command;
 }
 
 void Client::queueOutput(const std::string &msg) {
