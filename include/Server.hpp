@@ -5,12 +5,15 @@
 #include <map>
 #include <poll.h>
 #include <string>
+#include "Client.hpp"
 
 class Server {
 	private:
+		int _port;
+		std::string _pass;
 		int _serverFd;
 		std::vector<struct pollfd>_pollFds;
-		std::map<int , Client*>;
+		std::map <int , Client*> _clients;
 	public:
 		Server(int port, std::string pass);
 		Server(const Server &copy);
