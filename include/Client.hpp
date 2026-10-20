@@ -11,7 +11,7 @@ class Client {
 		std::string _nickname;
 		std::string _username;
 		bool _isAuthenticated;
-		std::string _inputBuffer;
+		Parser _parser;
 		std::string _outputBuffer;
 	public:
 		Client(int fd, std::string ip);
@@ -20,9 +20,8 @@ class Client {
 		~Client() {};
 
 		int getFd() const;
-		void Client::appendInput(const std::string &data);
-		std::string extractMessage(const std::string &data, Message &message);
 		void queueOutput(const std::string &msg);
+		Parser::Parse_e parseData(const std::string &data, Message &msg);
 };
 
 #endif
