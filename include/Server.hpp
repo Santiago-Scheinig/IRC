@@ -5,7 +5,15 @@
 #include <map>
 #include <poll.h>
 #include <string>
+#include <unistd.h>
+#include <fstream>
 #include "Client.hpp"
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <cstring>
+#include <stdexcept>
+#include <netinet/in.h>
 
 class Server {
 	private:
@@ -14,10 +22,10 @@ class Server {
 		int _serverFd;
 		std::vector<struct pollfd>_pollFds;
 		std::map <int , Client*> _clients;
-	public:
-		Server(int port, std::string pass);
 		Server(const Server &copy);
 		Server& operator=(const Server &copy);
+	public:
+		Server(int port, std::string pass);
 		~Server();
 
 		void initServer();
