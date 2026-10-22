@@ -29,6 +29,7 @@ class Server {
 		~Server();
 
 		void initServer();
+		void deleteFd(size_t i);
 		void run();
 		void acceptNewClient();
 		void receiveData(int fd);
