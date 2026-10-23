@@ -58,29 +58,45 @@ void Server::deleteFd(size_t i) {
 		delete it->second;
 		_clients.erase(it);
 	}
-	_pollFds.erase(_pollFds.begin() + i);
+	_pollFds[i] = _pollFds.back();
+	_pollFds.pop_back();
 }
 
 void Server::run() {
 	while (true) {
 		int pollret = poll(&_pollFds[0], _pollFds.size(), -1);
-		if (pollret < 0)
+		if (pollret < 0) {
+			if (errno == EINTR)
+				continue;
 			throw std::runtime_error("poll() Failed");
+		}
 		for (size_t i = 0; i != _pollFds.size(); ++i) {
-			if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+			short ev = _pollFds[i].revents;
+			if (ev & POLLNVAL) {
+				deleteFd(i);
+				--i;
+				continue;
+			}
+			if (ev & POLLERR) {
 				if (_pollFds[i].fd == _serverFd)
 					throw std::runtime_error("_serverFd Failed, Fatal error!!");
 				deleteFd(i);
 				--i;
 				continue;
 			}
-			if (_pollFds[i].revents & POLLIN) {
-				if (_pollFds[i].fd == _serverFd)
+			if (ev & (POLLIN | POLLHUP)) {
+				if (_pollFds[i].fd == _serverFd) {
+					if (ev & POLLHUP)
+						throw std::runtime_error("_serverFd Failed, Fatal error!!");
 					acceptNewClient();
-				else
-					receiveData(_pollFds[i].fd);
+				}
+				else if (receiveData(_pollFds[i].fd)) {
+					deleteFd(i);
+					--i;
+					continue;
+				}
 			}
-			if (_pollFds[i].revents & POLLOUT) {
+			if (ev & POLLOUT) {
 				if (_clients.find(_pollFds[i].fd) != _clients.end())
 					sendData(_pollFds[i].fd);
 			}

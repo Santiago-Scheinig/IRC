@@ -14,6 +14,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <netinet/in.h>
+#include <errno>
 
 class Server {
 	private:
@@ -32,7 +33,7 @@ class Server {
 		void deleteFd(size_t i);
 		void run();
 		void acceptNewClient();
-		void receiveData(int fd);
+		bool receiveData(int fd);
 		void sendData(int fd);
 };
 
