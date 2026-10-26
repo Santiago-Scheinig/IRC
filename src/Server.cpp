@@ -52,12 +52,13 @@ void Server::initServer() {
 }
 
 void Server::deleteFd(size_t i) {
-	close(_pollFds[i].fd);
-	std::map<int, Client*>::iterator it = _clients.find(_pollFds[i].fd);
+	int fd = _pollFds[i].fd;
+	std::map<int, Client*>::iterator it = _clients.find(fd);
 	if (it != _clients.end()) {
 		delete it->second;
 		_clients.erase(it);
 	}
+	close(fd);
 	_pollFds[i] = _pollFds.back();
 	_pollFds.pop_back();
 }
@@ -90,7 +91,7 @@ void Server::run() {
 						throw std::runtime_error("_serverFd Failed, Fatal error!!");
 					acceptNewClient();
 				}
-				else if (receiveData(_pollFds[i].fd)) {
+				else if (!receiveData(_pollFds[i].fd)) {
 					deleteFd(i);
 					--i;
 					continue;
@@ -101,5 +102,35 @@ void Server::run() {
 					sendData(_pollFds[i].fd);
 			}
 		}
+	}
+}
+
+bool Server::receiveData(int fd) {
+	std::map<int, Client*>::iterator it = _clients.find(fd);
+	if (it == _clients.end())
+		return false;
+	Client *client = it->second;
+	char buf[512];
+	while (true) {
+		ssize_t n = recv(fd, buf, sizeof(buf), 0);
+		if (n > 0) {
+			std::string pending(buf, static_cast<std::size_t>(n));
+			while (true) {
+				Message msg;
+				Parser::Parse_e result = client->parseData(pending, msg);
+				pending.clear();
+				if (result == Parser::PARSE_INCOMPLETE)
+					break;
+				if (result == Parser::PARSE_MESSAGE) {
+					//ejecutar el comando de msg aqui.
+				}
+			}
+			continue;
+		}
+		if (n == 0)
+			return false;
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return true;
+		return false;
 	}
 }
