@@ -17,11 +17,13 @@ class Client {
 		Client(int fd, std::string ip);
 		Client(const Client &copy);
 		Client& operator=(const Client &copy);
-		~Client() {};
+		~Client();
 
 		int getFd() const;
 		void queueOutput(const std::string &msg);
 		Parser::Parse_e parseData(const std::string &data, Message &msg);
+		bool hasPendingOutput() const;
+		std::string &outputBuffer();
 };
 
 #endif

@@ -41,3 +41,11 @@ Parser::Parse_e Client::parseData(const std::string &data, Message &msg) {
 void Client::queueOutput(const std::string &msg) {
 	this->_outputBuffer += msg;
 }
+
+bool Client::hasPendingOutput() const {
+	return !this->_outputBuffer.empty();
+}
+
+std::string &Client::outputBuffer() {
+	return this->_outputBuffer;
+}
