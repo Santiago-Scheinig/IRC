@@ -35,6 +35,7 @@ class Server {
 		void acceptNewClient();
 		bool receiveData(int fd);
 		void sendData(int fd);
+		void enableWrite(int fd);
 };
 
 #endif

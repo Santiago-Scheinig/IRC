@@ -30,7 +30,6 @@ void Server::initServer() {
 		close(_serverFd);
 		throw std::runtime_error("fcntl() failed");
 	}
-
 	struct sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -44,11 +43,11 @@ void Server::initServer() {
 		close(_serverFd);
 		throw std::runtime_error("listen() Failed");
 	}
-	struct pollfd pdf;
-	pdf.fd = _serverFd;
-	pdf.events = POLLIN;
-	pdf.revents = 0;
-	_pollFds.push_back(pdf);
+	struct pollfd pfd;
+	pfd.fd = _serverFd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	_pollFds.push_back(pfd);
 }
 
 void Server::deleteFd(size_t i) {
@@ -73,13 +72,8 @@ void Server::run() {
 		}
 		for (size_t i = 0; i != _pollFds.size(); ++i) {
 			short ev = _pollFds[i].revents;
-			if (ev & POLLNVAL) {
-				deleteFd(i);
-				--i;
-				continue;
-			}
-			if (ev & POLLERR) {
-				if (_pollFds[i].fd == _serverFd)
+			if (ev & (POLLNVAL | POLLERR)) {
+				if ((ev & POLLERR) && _pollFds[i].fd == _serverFd)
 					throw std::runtime_error("_serverFd Failed, Fatal error!!");
 				deleteFd(i);
 				--i;
@@ -105,6 +99,24 @@ void Server::run() {
 	}
 }
 
+void Server::acceptNewClient() {
+	struct sockaddr_in clientAddr;
+	socklen_t clientAddrLen = sizeof(clientAddr);
+	int clientFd = accept(_serverFd, (struct sockaddr *) &clientAddr, &clientAddrLen);
+	if (clientFd < 0)
+		return;
+	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0) {
+		close(clientFd);
+		return;
+	}
+	struct pollfd pfd;
+	pfd.fd = clientFd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	_pollFds.push_back(pfd);
+	_clients[clientFd] = new Client(clientFd, std::string(inet_ntoa(clientAddr.sin_addr)));
+}
+
 bool Server::receiveData(int fd) {
 	std::map<int, Client*>::iterator it = _clients.find(fd);
 	if (it == _clients.end())
@@ -121,6 +133,11 @@ bool Server::receiveData(int fd) {
 				pending.clear();
 				if (result == Parser::PARSE_INCOMPLETE)
 					break;
+				if (result == Parser::PARSE_INVALID) {
+					client->queueOutput("ERROR: Invalid command\r\n");
+					enableWrite(fd);
+					continue;
+				}
 				if (result == Parser::PARSE_MESSAGE) {
 					//ejecutar el comando de msg aqui.
 				}
@@ -132,5 +149,31 @@ bool Server::receiveData(int fd) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return true;
 		return false;
+	}
+}
+
+void Server::sendData(int fd) {
+	Client *client = _clients[fd];
+	std::string &out = client->outputBuffer();
+	ssize_t n = send(fd, out.c_str(), out.size(), 0);
+	if (n > 0)
+		out.erase(0, static_cast<std::size_t>(n));
+	if (!client->hasPendingOutput()) {
+		for (size_t i = 0; i != _pollFds.size(); ++i) {
+			if (_pollFds[i].fd == fd) {
+				_pollFds[i].events &= ~POLLOUT;
+			}
+		}
+	}
+	else
+		enableWrite(fd);
+}
+
+void Server::enableWrite(int fd) {
+	for (size_t i = 0; i != _pollFds.size(); ++i) {
+		if (_pollFds[i].fd == fd) {
+			_pollFds[i].events |= POLLOUT;
+			return;
+		}
 	}
 }
