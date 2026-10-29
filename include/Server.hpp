@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <netinet/in.h>
 #include <errno>
+#include <arpa/inet.h>
 
 class Server {
 	private:
@@ -36,6 +37,7 @@ class Server {
 		bool receiveData(int fd);
 		void sendData(int fd);
 		void enableWrite(int fd);
+		bool passwordMatches(const std::string &pass) const;
 };
 
 #endif

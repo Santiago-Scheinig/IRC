@@ -3,10 +3,6 @@
 Server::Server(int port, std::string pass) : _port(port), _pass(pass), _serverFd(-1) {
 }
 
-Server::Server(const Server &copy) {}
-
-Server& Server::operator=(const Server &copy) {}
-
 Server::~Server() {
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		close(it->first);
@@ -176,4 +172,10 @@ void Server::enableWrite(int fd) {
 			return;
 		}
 	}
+}
+
+// checks if the password matches the one in the config file
+// this functions wshould be called for PASS command
+bool Server::passwordMatches(const std::string &pass) const {
+	return this->_pass == pass;
 }
