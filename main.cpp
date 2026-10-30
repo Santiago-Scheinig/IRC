@@ -9,7 +9,7 @@ int	main(int argc, char** argv)
 	{
 		Config	config(argc, argv);
 		Server	server(config);
-
+		server.initServer();
 		server.run();
 	}
 	catch (const std::exception& e)
