@@ -33,10 +33,12 @@ void Server::initServer() {
 	addr.sin_port = htons(_port);
 	if (bind(_serverFd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		close(_serverFd);
+		_serverFd = -1;
 		throw std::runtime_error("bind() failed");
 	}
 	if (listen(_serverFd, SOMAXCONN) < 0) {
 		close(_serverFd);
+		_serverFd = -1;
 		throw std::runtime_error("listen() Failed");
 	}
 	struct pollfd pfd;
