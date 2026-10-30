@@ -90,8 +90,10 @@ void Server::run() {
 				}
 			}
 			if (ev & POLLOUT) {
-				if (_clients.find(_pollFds[i].fd) != _clients.end())
-					sendData(_pollFds[i].fd);
+				if (_clients.find(_pollFds[i].fd) != _clients.end() && !sendData(_pollFds[i].fd))
+					deleteFd(i);
+					--i;
+					continue;
 			}
 		}
 	}
@@ -153,18 +155,23 @@ bool Server::receiveData(int fd) {
 void Server::sendData(int fd) {
 	Client *client = _clients[fd];
 	std::string &out = client->outputBuffer();
-	ssize_t n = send(fd, out.c_str(), out.size(), 0);
-	if (n > 0)
+	if (out.empty())
+		return true;
+	ssize_t n = send(fd, out.c_str(), out.size(), MSG_NOSIGNAL);
+	if (n > 0) {
 		out.erase(0, static_cast<std::size_t>(n));
-	if (!client->hasPendingOutput()) {
-		for (size_t i = 0; i != _pollFds.size(); ++i) {
-			if (_pollFds[i].fd == fd) {
-				_pollFds[i].events &= ~POLLOUT;
+		if (!client->hasPendingOutput()) {
+			for (size_t i = 0; i != _pollFds.size(); ++i) {
+				if (_pollFds[i].fd == fd) {
+					_pollFds[i].events &= ~POLLOUT;
+				}
 			}
 		}
+		return true;
 	}
-	else
-		enableWrite(fd);
+	if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR))
+		return true;
+	return false;
 }
 
 void Server::enableWrite(int fd) {

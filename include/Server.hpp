@@ -35,7 +35,7 @@ class Server {
 		void run();
 		void acceptNewClient();
 		bool receiveData(int fd);
-		void sendData(int fd);
+		bool sendData(int fd);
 		void enableWrite(int fd);
 		bool passwordMatches(const std::string &pass) const;
 };
