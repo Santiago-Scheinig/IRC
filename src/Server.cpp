@@ -90,10 +90,11 @@ void Server::run() {
 				}
 			}
 			if (ev & POLLOUT) {
-				if (_clients.find(_pollFds[i].fd) != _clients.end() && !sendData(_pollFds[i].fd))
+				if (_clients.find(_pollFds[i].fd) != _clients.end() && !sendData(_pollFds[i].fd)) {
 					deleteFd(i);
 					--i;
 					continue;
+				}
 			}
 		}
 	}
@@ -123,54 +124,55 @@ bool Server::receiveData(int fd) {
 		return false;
 	Client *client = it->second;
 	char buf[512];
-	while (true) {
-		ssize_t n = recv(fd, buf, sizeof(buf), 0);
-		if (n > 0) {
-			std::string pending(buf, static_cast<std::size_t>(n));
-			while (true) {
-				Message msg;
-				Parser::Parse_e result = client->parseData(pending, msg);
-				pending.clear();
-				if (result == Parser::PARSE_INCOMPLETE)
-					break;
-				if (result == Parser::PARSE_INVALID) {
-					client->queueOutput("ERROR: Invalid command\r\n");
-					enableWrite(fd);
-					continue;
-				}
-				if (result == Parser::PARSE_MESSAGE) {
-					//ejecutar el comando de msg aqui.
-				}
+	ssize_t n = recv(fd, buf, sizeof(buf), 0);
+	if (n > 0) {
+		std::string pending(buf, static_cast<std::size_t>(n));
+		while (true) {
+			Message msg;
+			Parser::Parse_e result = client->parseData(pending, msg);
+			pending.clear();
+			if (result == Parser::PARSE_INCOMPLETE)
+				break;
+			if (result == Parser::PARSE_INVALID) {
+				client->queueOutput("ERROR: Invalid command\r\n");
+				enableWrite(fd);
+				continue;
 			}
-			continue;
+			if (result == Parser::PARSE_MESSAGE) {
+				//ejecutar el comando de msg aqui.
+			}
 		}
-		if (n == 0)
-			return false;
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return true;
-		return false;
+		return true;
 	}
+	return false;
 }
 
-void Server::sendData(int fd) {
-	Client *client = _clients[fd];
+bool Server::sendData(int fd) {
+	std::map<int, Client*>::iterator it = _clients.find(fd);
+	if (it == _clients.end())
+		return false;
+	Client *client = it->second;
 	std::string &out = client->outputBuffer();
-	if (out.empty())
+	if (out.empty()) {
+		for (size_t i = 0; i != _pollFds.size(); ++i) {
+			if (_pollFds[i].fd == fd) {
+				_pollFds[i].events &= ~POLLOUT;
+				break;
+			}
+		}
 		return true;
+	}
 	ssize_t n = send(fd, out.c_str(), out.size(), MSG_NOSIGNAL);
 	if (n > 0) {
 		out.erase(0, static_cast<std::size_t>(n));
 		if (!client->hasPendingOutput()) {
 			for (size_t i = 0; i != _pollFds.size(); ++i) {
-				if (_pollFds[i].fd == fd) {
+				if (_pollFds[i].fd == fd)
 					_pollFds[i].events &= ~POLLOUT;
-				}
 			}
 		}
 		return true;
 	}
-	if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR))
-		return true;
 	return false;
 }
 

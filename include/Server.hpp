@@ -14,7 +14,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <netinet/in.h>
-#include <errno>
+#include <cerrno>
 #include <arpa/inet.h>
 
 class Server {
