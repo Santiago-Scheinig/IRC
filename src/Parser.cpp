@@ -5,13 +5,9 @@
 /**
  * Should this exist? Or should we make it private?
  */
-Parser::Parser() : _inputBuffer()
-{
-}
+Parser::Parser() : _inputBuffer(){}
 
-Parser::~Parser()
-{
-}
+Parser::~Parser(){}
 
 Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
 {
@@ -116,13 +112,6 @@ Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) co
 		return PARSE_INVALID;
 	if (_readParams(line, pos, params, trailing, hasTrailing) == PARSE_INVALID)
 		return PARSE_INVALID;
-	message = Message(std::string input);
-	return PARSE_MESSAGE;
-}
-
-/**
- * Pretty sure there's already a function std:: that does this.
- */
 	message = Message(prefix, command, params, trailing, hasTrailing);
 	return PARSE_MESSAGE;
 }
