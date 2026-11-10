@@ -125,27 +125,28 @@ bool Server::receiveData(int fd) {
 	Client *client = it->second;
 	char buf[512];
 	ssize_t n = recv(fd, buf, sizeof(buf), 0);
-	if (n > 0) {
-		std::string pending(buf, static_cast<std::size_t>(n));
-		while (true) {
-			Message msg;
-			Parser::Parse_e result = client->parseData(pending, msg);
-			pending.clear();
-			if (result == Parser::PARSE_INCOMPLETE)
-				break;
-			if (result == Parser::PARSE_INVALID) {
-				Replies::numeric(421, client->getNickName(), "Unknown command: " + msg.getCommand());
-				enableWrite(fd);
-				continue;
-			}
-			if (result == Parser::PARSE_MESSAGE) {
-				//ejecutar el comando de msg aqui.
-			}
-			//registry.dispatch(); 
-		}
+	if (n == 0)
+		return false;
+	if (n < 0)
 		return true;
+	std::string pending(buf, static_cast<std::size_t>(n));
+	while (true) {
+		Message msg;
+		Parser::Parse_e result = client->parseData(pending, msg);
+		pending.clear();
+		if (result == Parser::PARSE_INCOMPLETE)
+			break;
+		if (result == Parser::PARSE_INVALID) {
+			Replies::numeric(421, client->getNickName(), "Unknown command: " + msg.getCommand());
+			enableWrite(fd);
+			continue;
+		}
+		if (result == Parser::PARSE_MESSAGE) {
+			//ejecutar el command.registry de msg aqui.
+		}
+		//registry.dispatch(); 
 	}
-	return false;
+	return true;
 }
 
 bool Server::sendData(int fd) {
@@ -164,17 +165,17 @@ bool Server::sendData(int fd) {
 		return true;
 	}
 	ssize_t n = send(fd, out.c_str(), out.size(), MSG_NOSIGNAL);
-	if (n > 0) {
-		out.erase(0, static_cast<std::size_t>(n));
-		if (!client->hasPendingOutput()) {
-			for (size_t i = 0; i != _pollFds.size(); ++i) {
-				if (_pollFds[i].fd == fd)
-					_pollFds[i].events &= ~POLLOUT;
-			}
-		}
+	if (n <= 0)
 		return true;
+	out.erase(0, static_cast<std::size_t>(n));
+	if (!client->hasPendingOutput()) {
+		for (size_t i = 0; i != _pollFds.size(); ++i) {
+			if (_pollFds[i].fd == fd)
+				_pollFds[i].events &= ~POLLOUT;
+				break;
+		}
 	}
-	return false;
+	return true;
 }
 
 void Server::enableWrite(int fd) {
