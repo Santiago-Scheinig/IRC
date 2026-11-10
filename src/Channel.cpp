@@ -15,7 +15,7 @@ const std::string &Channel::getName() const {
     return _name;
 }
 
-void Channel::addMemeber(Client *client, bool isOperator) {
+void Channel::addMember(Client *client, bool isOperator) {
     if (client == NULL)
         return;
     std::map<Client *, bool>::iterator it = _members.find(client);
