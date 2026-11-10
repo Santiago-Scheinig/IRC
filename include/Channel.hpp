@@ -6,7 +6,7 @@
 #include <set>
 #include <cstddef>
 
-Class Client;
+class Client;
 
 class Channel {
     private:
@@ -20,8 +20,6 @@ class Channel {
         std::set<Client *> _invited;
     public:
         Channel(const std::string &name);
-        Channel(const Channel &copy) {};
-        Channel& operator=(const Channel &copy) {};
         ~Channel();
         const std::string &getName() const;
         void addMember(Client *client, bool isOperator);
