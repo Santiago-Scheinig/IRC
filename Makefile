@@ -12,8 +12,8 @@ SRCS		:= main.cpp \
 			   src/CommandRegistry.cpp \
 			   src/ICommand.cpp \
 			   src/Replies.cpp \
-			   src/Config.cpp
-
+			   src/Config.cpp \
+			   src/IRCException.cpp
 OBJS		:= $(SRCS:.cpp=.o)
 
 all: $(NAME)
