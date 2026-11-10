@@ -29,7 +29,7 @@
 }
 
 Config              &Config::operator=(const Config &other){
-    if (this != other) {
+    if (this != &other) {
         _port = other._port;
         _password = other._password;
     }
@@ -63,13 +63,14 @@ void                Config::parsePassword(const std::string &s) {
     for (std::size_t i = 0; i < size; i++)
         if (!std::isprint(static_cast<unsigned char>(s[i])))
             throw IRCException::IRCException("inv_password", "password cannot have non printable characters");
+        _password = s;
 }
 
 void                Config::initSignalHandler() {
     //What are we handling? And why?
 }
 
-const std::string   Config::getPassword() throw() const {
+const std::string   &Config::getPassword() throw() const {
     return (_password);
 }
 
