@@ -60,8 +60,8 @@ class IRCException : public std::exception {
 class IRCFormatter {
 
 	private:
-							IRCErrcoFormatter();
-							~IRCErrcoFormatter();
+							IRCFormatter();
+							~IRCFormatter();
 	
 	public:
 		static std::string	format(ircErrco errco);
