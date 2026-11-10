@@ -8,7 +8,7 @@ int	main(int argc, char** argv)
 	try
 	{
 		Config	config(argc, argv);
-		Server	server(config);
+		Server	server(config.getPort(), config.getPassword());
 		server.initServer();
 		server.run();
 	}
