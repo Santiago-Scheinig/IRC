@@ -134,13 +134,14 @@ bool Server::receiveData(int fd) {
 			if (result == Parser::PARSE_INCOMPLETE)
 				break;
 			if (result == Parser::PARSE_INVALID) {
-				client->queueOutput("ERROR: Invalid command\r\n");
+				Replies::numeric(421, client->getNickName(), "Unknown command: " + msg.getCommand());
 				enableWrite(fd);
 				continue;
 			}
 			if (result == Parser::PARSE_MESSAGE) {
 				//ejecutar el comando de msg aqui.
 			}
+			//registry.dispatch(); 
 		}
 		return true;
 	}
