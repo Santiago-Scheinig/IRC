@@ -5,13 +5,9 @@
 /**
  * Should this exist? Or should we make it private?
  */
-Parser::Parser() : _inputBuffer()
-{
-}
+Parser::Parser() : _inputBuffer(){}
 
-/**
- * We are missing the other OCF functions, its normative.
- */
+Parser::~Parser(){}
 
 Parser::~Parser() {}
 
