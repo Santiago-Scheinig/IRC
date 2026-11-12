@@ -24,6 +24,7 @@ class Server {
 		int _serverFd;
 		std::vector<struct pollfd>_pollFds;
 		std::map <int , Client*> _clients;
+		std::map<std::string, Channel*> _channels;
 		Server(const Server &copy);
 		Server& operator=(const Server &copy);
 	public:
