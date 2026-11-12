@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <cerrno>
 #include <arpa/inet.h>
+#include "Channel.hpp"
 
 class Server {
 	private:
@@ -33,6 +34,7 @@ class Server {
 
 		void initServer();
 		void deleteFd(size_t i);
+		void removeClientFromChannels(Client *client);
 		void run();
 		void acceptNewClient();
 		bool receiveData(int fd);

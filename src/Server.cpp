@@ -1,9 +1,15 @@
 #include "Server.hpp"
+#include "Replies.hpp"
 
 Server::Server(int port, std::string pass) : _port(port), _pass(pass), _serverFd(-1) {
 }
 
 Server::~Server() {
+	std::map<std::string, Channel*>::iterator itCh = _channels.begin();
+	while (itCh != _channels.end()) {
+		delete itCh->second;
+		_channels.erase(itCh++);
+	}
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		close(it->first);
 		delete it->second;
@@ -52,12 +58,29 @@ void Server::deleteFd(size_t i) {
 	int fd = _pollFds[i].fd;
 	std::map<int, Client*>::iterator it = _clients.find(fd);
 	if (it != _clients.end()) {
+		removeClientFromChannels(it->second);
 		delete it->second;
 		_clients.erase(it);
 	}
 	close(fd);
 	_pollFds[i] = _pollFds.back();
 	_pollFds.pop_back();
+}
+
+void Server::removeClientFromChannels(Client *client) {
+	std::map<std::string, Channel*>::iterator it = _channels.begin();
+	while (it != _channels.end()) {
+		Channel *channel = it->second;
+		channel->removeMember(client);
+		if (channel->isEmpty()) {
+			delete channel;
+			std::map<std::string, Channel*>::iterator current = it;
+			++it;
+			_channels.erase(current);
+		}
+		else
+			++it;
+	}
 }
 
 void Server::run() {
@@ -137,7 +160,7 @@ bool Server::receiveData(int fd) {
 		if (result == Parser::PARSE_INCOMPLETE)
 			break;
 		if (result == Parser::PARSE_INVALID) {
-			Replies::numeric(421, client->getNickName(), "Unknown command: " + msg.getCommand());
+			Replies::numeric("ircserver", "421", client->getNickName(), "Unknown command: " + msg.getCommand());
 			enableWrite(fd);
 			continue;
 		}
