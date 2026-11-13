@@ -141,6 +141,8 @@ void			Server::newSocket() {
 	}
 	Socket *client = NULL;
 	try {
+		//We need to amplify or reduce socket information for building, since we are asking _realname, _username, _nickname, and never authenticating the pass word either.
+		//Perhaps newSocket should be done after a JOIN command? How are we verifying this information?
 		client = new Socket(fd, std::string(inet_ntoa(address.sin_addr)), newPoll(fd));
 		_clientArr.insert(std::make_pair(fd, client));
 	}
