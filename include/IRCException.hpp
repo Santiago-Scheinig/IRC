@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:24:12 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:16:27 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/13 11:43:10 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,10 @@ enum ircErrco {
 	SUCCESS,
 	ERR_MEM,
 	ERR_SCKT,
+	ERR_EXECLIENT,
+	ERR_INVCLIENT,
+	PARSE_INVALID,
+	PARSE_INCOMPLETE,
 	R_INVCMD = 421,
 	R_INVNICKNAME = 433,
 	R_INVCMDARGS = 461,
