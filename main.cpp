@@ -7,9 +7,8 @@ int	main(int argc, char** argv)
 {
 	try
 	{
-		Config	config(argc, argv);
-		Server	server(config);
-		server.initServer();
+		Config	dflt(argc, argv);
+		Server	server(dflt);
 		server.run();
 	}
 	catch (const std::exception& e)
