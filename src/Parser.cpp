@@ -9,11 +9,7 @@ Parser::~Parser(){}
 Parser::~Parser() {}
 
 /**
- * We are using enum to verify correct execution when we could use exceptions instead.
- * Easier to handle, better responsability division when handlining errors.
- * Harder to spot, flaging functions with throw() helps identify non-throwable functions.
- * This way, instead of returning an enum to verify, we can return a message and let the exceptions
- * handle the errors, if any.
+ * processInput should return a Message object instead of taking its reference.
  */
 Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
 {
