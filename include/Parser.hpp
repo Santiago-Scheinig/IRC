@@ -16,11 +16,19 @@ class Parser
 		};
 
 		Parser();
-	/**
-	* We are missing the other OCF functions, its normative.
-	*/
+		/**
+		* We are missing the other OCF functions, its normative.
+		*/
 		~Parser();
 
+		//This function should be static, that way i dont have to initialize a Parser object to parse
+		//something, likely why Client had a Parser _parser object. Which is redundant.
+		//Instead we do:
+		// Message processInput(std::string inputBuffer);
+		//The parser should then split the information, verify if its correct and return a created
+		//Message object with all its information already initialized and ready to use.
+		//If something fails, then an exception is thrown, which is catched by the main loop and handled as
+		//its supposed to.
 		Parse_e processInput(const std::string &data, Message &message);
 
 	private:

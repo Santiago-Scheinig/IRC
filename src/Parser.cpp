@@ -2,9 +2,6 @@
 
 #include <cctype>
 
-/**
- * Should this exist? Or should we make it private?
- */
 Parser::Parser() : _inputBuffer(){}
 
 Parser::~Parser(){}
@@ -32,7 +29,7 @@ Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
 	_inputBuffer.erase(0, end + 2);
 	// La linea existe, pero no contiene ningun comando que parsear.
 	if (line.empty())
-		return PARSE_INVALID;
+		return PARSE_INVALID; //throw IRCException::IRCException(PARSE_INVALID);
 	return _parseLine(line, message);		// devolvemos true y message struct.
 }
 
@@ -133,7 +130,7 @@ Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) co
 		return PARSE_INVALID;
 	if (_readParams(line, pos, params, trailing, hasTrailing) == PARSE_INVALID)
 		return PARSE_INVALID;
-	message = Message(std::string input);
+	message = Message(pos, prefix, command, params, trailing);
 	return PARSE_MESSAGE;
 }
 
