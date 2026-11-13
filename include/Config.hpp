@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:47 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:22:49 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/11 14:31:22 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@
 class Config {
     private:
         int                 _port;
-        std::string         _password;
+        std::string         _pass;
 
                             Config();
                             Config(const Config &other);

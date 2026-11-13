@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:30 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:32:43 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/11 14:33:10 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@
 Config              &Config::operator=(const Config &other){
     if (this != other) {
         _port = other._port;
-        _password = other._password;
+        _pass = other._pass;
     }
     return (*this);
 }
@@ -63,14 +63,16 @@ void                Config::parsePassword(const std::string &s) {
     for (std::size_t i = 0; i < size; i++)
         if (!std::isprint(static_cast<unsigned char>(s[i])))
             throw IRCException::IRCException("inv_password", "password cannot have non printable characters");
+	_pass = s;
 }
 
 void                Config::initSignalHandler() {
-    //What are we handling? And why?
+	//Handle SIGPIPE signal to ignore
+	//Handle CTRL+C to gracelly end the server
 }
 
 const std::string   Config::getPassword() throw() const {
-    return (_password);
+    return (_pass);
 }
 
 int                 Config::getPort() throw() const {
