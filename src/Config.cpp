@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:30 by sscheini          #+#    #+#             */
-/*   Updated: 2026/11/11 14:33:10 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/13 18:10:14 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,9 +66,27 @@ void                Config::parsePassword(const std::string &s) {
 	_pass = s;
 }
 
+void			signalHandler(int signum) {
+	if (signum == SIGINT)
+		g_shutdown = 1;
+}
+
 void                Config::initSignalHandler() {
-	//Handle SIGPIPE signal to ignore
-	//Handle CTRL+C to gracelly end the server
+	struct sigaction	sa;
+	struct sigaction	sa_pipe;
+
+	std::memset(&sa_pipe, 0, sizeof(sa_pipe));
+	sa_pipe.handler = SIG_IGN;
+	sigemptyset(&sa_pipe.sa_mask);
+	if (sigaction(SIGPIPE, &sa_pipe, NULL) == 1) {
+		throw std::exception(); //Failed to ignore SIGPIPE
+	}
+	std::memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = signalHandler;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, NULL) == 1) {
+		throw std::exception(); //Failed to register SIGINT handler
+	}
 }
 
 const std::string   Config::getPassword() throw() const {
