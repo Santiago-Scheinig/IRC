@@ -23,11 +23,7 @@ class Message
 		bool						_hasTrailing;
 
 	public:
-		Message();
 		Message(const std::string &prefix, const std::string &cmd, const std::vector<std::string> &params, const std::string &trailing, bool hasTrailing);
-	/**
-	* We are missing the other OCF functions, its normative.
-	*/
 		~Message();
 
 		const std::string				&getPrefix() const;
