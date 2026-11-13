@@ -50,6 +50,9 @@ void			Server::initAddr(const int fd) const {
 	}
 }
 
+/**
+ * Are we accounting for non empty buffers? we should
+ */
 				Server::~Server() {
 	while (!_clientArr.empty())
 		deleteSocket(_clientArr.begin());
@@ -62,7 +65,7 @@ void			Server::initAddr(const int fd) const {
 /* ------------------------------------------------------------------------ */
 
 void			Server::run() {
-	while (!verifyGSF()) {
+	while (!g_shutdown) {
 
 		std::vector<struct pollfd> pollArr;
 
@@ -71,8 +74,11 @@ void			Server::run() {
 			pollArr.push_back(client_it->second->getPollFD());
 		
 		if (poll(&pollArr[0], pollArr.size(), -1) < 0) {
-			if (errno == EINTR)
+			if (errno == EINTR) {
+				if (g_shutdown)
+					break;
 				continue;
+			}
 			throw std::runtime_error("poll() Failed"); //Fatal needs formating
 		}
 		if (pollArr[0].revents & (POLLERR | POLLNVAL))
@@ -85,6 +91,8 @@ void			Server::run() {
 			//Handle new Client Issues.
 		}	
 		for (size_t i = 1; i < pollArr.size(); ++i) {
+			if (g_shutdown)
+				break;
 			if (!pollArr[i].revents)
 				continue;
 			std::map <int, Socket *>::iterator client_it = _clientArr.find(pollArr[i].fd);
@@ -168,6 +176,9 @@ void			Server::manageSocket(std::map<int, Socket*>::iterator client_it, short re
 		deleteSocket(client_it);
 }
 
+//This should delete bytes on buffIn and buffOut for shutdown purposes case only, since if thats not the case
+//manageSocket() will always make sure all buffers are empty before closing a client that has left the Server.
+//Making deleteSockete never have to clean the buffers unless its absolutlely necesary.
 void			Server::deleteSocket(std::map<int, Socket*>::iterator client_it) {
 	close(client_it->first);
 	delete client_it->second;
