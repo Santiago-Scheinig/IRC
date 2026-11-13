@@ -3,6 +3,8 @@
 #include <iostream>
 #include <exception>
 
+volatile sig_atomic_t	g_shutdown = 0;
+
 int	main(int argc, char** argv)
 {
 	try
