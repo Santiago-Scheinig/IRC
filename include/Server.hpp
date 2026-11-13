@@ -1,43 +1,72 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-#include <vector>
-#include <map>
-#include <poll.h>
-#include <string>
-#include <unistd.h>
-#include <fstream>
-#include "Client.hpp"
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <cstring>
-#include <stdexcept>
-#include <netinet/in.h>
-#include <cerrno>
-#include <arpa/inet.h>
+# include "Config.hpp"
+# include "IRCException.hpp"
+# include "Socket.hpp"
+
+#	include <vector>
+#	include <map>
+#	include <string>
+#	include <cerrno>
+#	include <cstring>
+#	include <fstream>
+#	include <poll.h>
+#	include <fcntl.h>
+#	include <unistd.h>
+#	include <sys/socket.h>
+#	include <sys/types.h>
+#	include <arpa/inet.h>
+#	include <netinet/in.h>
 
 class Server {
 	private:
-		int _port;
-		std::string _pass;
-		int _serverFd;
-		std::vector<struct pollfd>_pollFds;
-		std::map <int , Client*> _clients;
-		Server(const Server &copy);
-		Server& operator=(const Server &copy);
-	public:
-		Server(int port, std::string pass);
-		~Server();
 
-		void initServer();
-		void deleteFd(size_t i);
-		void run();
-		void acceptNewClient();
-		bool receiveData(int fd);
-		bool sendData(int fd);
-		void enableWrite(int fd);
-		bool passwordMatches(const std::string &pass) const;
+		/* ----------------------------   SERVER INFO   ---------------------------- */
+		
+		/**
+		 * htons expects uint16_t
+		 * is this relevant for port?
+		 */
+		const int 				_port;
+		const std::string		_password;
+		
+		/* ---------------------------- SERVER CONTENTS ---------------------------- */
+		
+		std::map<int , Socket*>	_clientArr;
+		struct pollfd			_pollFD;
+		int						_spareFD;
+
+		/* ----------------------------       OCF       ---------------------------- */
+		
+						Server(const Server &copy);
+						Server& operator=(const Server &copy);
+
+		/* ----------------------------   INITIALIZERS  ---------------------------- */
+		
+		void 			initAddr(const int fd) const;
+		void 			initSocket(const int fd) const;
+
+		struct pollfd	newPoll(const int fd) const throw();
+		void 			newSocket();
+		
+		/* ----------------------------     MANAGMENT   ---------------------------- */
+		
+		void 			manageSocket(std::map<int, Socket*>::iterator client_it, short revents);
+		void 			deleteSocket(std::map<int, Socket*>::iterator client_it);
+	
+	public:
+	
+		/* ----------------------------       OCF       ---------------------------- */
+
+						Server(Config type);
+						~Server();
+
+		/* ----------------------------     MANAGMENT   ---------------------------- */
+
+		void 			run();
+
+		bool 			matchPassword(const std::string &pass) const throw();
 };
 
 #endif
