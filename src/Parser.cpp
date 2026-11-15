@@ -2,13 +2,12 @@
 
 #include <cctype>
 
-Parser::Parser() : _inputBuffer()
-{
-}
+/**
+ * Should this exist? Or should we make it private?
+ */
+Parser::Parser() : _inputBuffer(){}
 
-Parser::~Parser()
-{
-}
+Parser::~Parser(){}
 
 Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
 {

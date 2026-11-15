@@ -1,59 +1,43 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-#include <csignal>
-# include <vector>
-# include <map>
-# include <string>
-# include <poll.h>
-# include <stdexcept>
-# include <iostream>
-# include <cstring>
-# include <unistd.h>
-# include <fcntl.h>
-# include <arpa/inet.h>
-# include <sys/socket.h>
-# include <netinet/in.h>
+#include <vector>
+#include <map>
+#include <poll.h>
+#include <string>
+#include <unistd.h>
+#include <fstream>
+#include "Client.hpp"
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <cstring>
+#include <stdexcept>
+#include <netinet/in.h>
+#include <cerrno>
+#include <arpa/inet.h>
 
-#include "Message.hpp"
-#include "Parser.hpp"
-
-
-extern volatile sig_atomic_t	g_running;
-
-class Client;
-class Channel;
-
-class	Server
-{
+class Server {
 	private:
-		Server();
-		Server(const Server &other);
-		Server &operator=(const Server &other);
-
-		int					_port;
-		std::string			_password;
-		int					_serverFd;
-		std::vector<struct pollfd> _pollfds;
-
-		std::map<int, Client *> _clients;					//Server crea Client  -> Server destruye Client
-		std::map<std::string, Channel *> _channels;			//Server crea Channel -> Server destruye Channel
-
-		void _initSocket();
-
-		void _acceptClient();
-		void _handleClient(int fd);
-		void _flushClientOutput(int fd);
-		void _removeClient(int fd);
-
+		int _port;
+		std::string _pass;
+		int _serverFd;
+		std::vector<struct pollfd>_pollFds;
+		std::map <int , Client*> _clients;
+		Server(const Server &copy);
+		Server& operator=(const Server &copy);
 	public:
-		Server(int port, const std::string &password);
+		Server(int port, std::string pass);
 		~Server();
 
-		void	run();
-
-		// * Getters * //
-		const std::string&	getPassword() const {return _password;}
+		void initServer();
+		void deleteFd(size_t i);
+		void run();
+		void acceptNewClient();
+		bool receiveData(int fd);
+		bool sendData(int fd);
+		void enableWrite(int fd);
+		bool passwordMatches(const std::string &pass) const;
 };
 
 #endif
