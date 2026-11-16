@@ -7,7 +7,6 @@
 
 #	include <vector>
 #	include <map>
-#	include <string>
 #	include <cerrno>
 #	include <cstring>
 #	include <fstream>
@@ -22,51 +21,34 @@
 class Server {
 	private:
 
-		/* ----------------------------   SERVER INFO   ---------------------------- */
-		
-		/**
-		 * htons expects uint16_t
-		 * is this relevant for port?
-		 */
 		const int 				_port;
 		const std::string		_password;
-		
-		/* ---------------------------- SERVER CONTENTS ---------------------------- */
-		
+
 		std::map<int , Socket*>	_clientArr;
 		struct pollfd			_pollFD;
 		int						_spareFD;
 
-		/* ----------------------------       OCF       ---------------------------- */
-		
-						Server(const Server &copy);
-						Server& operator=(const Server &copy);
+								Server(const Server &copy);
+								Server& operator=(const Server &copy);
 
-		/* ----------------------------   INITIALIZERS  ---------------------------- */
-		
-		void 			initAddr(const int fd) const;
-		void 			initSocket(const int fd) const;
+		int 					initSocket() const;
+		int 					initAddr(const int serverFD) const;
+		void					initFDS(const int serverFD);
 
-		struct pollfd	newPoll(const int fd) const throw();
-		void 			newSocket();
+		void 					addNewClient();
+		int						acceptClient(struct sockaddr_in &address);
+		void 					manageClient(std::map<int, Socket*>::iterator client_it, short revents);
+		void 					deleteClient(std::map<int, Socket*>::iterator client_it);
 		
-		/* ----------------------------     MANAGMENT   ---------------------------- */
-		
-		void 			manageSocket(std::map<int, Socket*>::iterator client_it, short revents);
-		void 			deleteSocket(std::map<int, Socket*>::iterator client_it);
+		void 					reapClosing();
 	
 	public:
 	
-		/* ----------------------------       OCF       ---------------------------- */
+								Server(Config init);
+								~Server();
 
-						Server(Config type);
-						~Server();
-
-		/* ----------------------------     MANAGMENT   ---------------------------- */
-
-		void 			run();
-
-		bool 			matchPassword(const std::string &pass) const throw();
+		void 					run();
+		bool 					matchPassword(const std::string &pass) const throw();
 };
 
 #endif
