@@ -89,10 +89,10 @@ void                Config::initSignalHandler() {
 	}
 }
 
-const std::string   Config::getPassword() throw() const {
+const std::string   &Config::getPassword() const throw() {
     return (_pass);
 }
 
-int                 Config::getPort() throw() const {
+int                 Config::getPort() const throw() {
     return (_port);
 }
