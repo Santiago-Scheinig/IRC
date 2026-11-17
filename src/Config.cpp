@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:30 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:32:43 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/13 18:10:14 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@
 Config              &Config::operator=(const Config &other){
     if (this != &other) {
         _port = other._port;
-        _password = other._password;
+        _pass = other._pass;
     }
     return (*this);
 }
@@ -63,15 +63,34 @@ void                Config::parsePassword(const std::string &s) {
     for (std::size_t i = 0; i < size; i++)
         if (!std::isprint(static_cast<unsigned char>(s[i])))
             throw IRCException::IRCException("inv_password", "password cannot have non printable characters");
-        _password = s;
+	_pass = s;
+}
+
+void			signalHandler(int signum) {
+	if (signum == SIGINT)
+		g_shutdown = 1;
 }
 
 void                Config::initSignalHandler() {
-    //What are we handling? And why?
+	struct sigaction	sa;
+	struct sigaction	sa_pipe;
+
+	std::memset(&sa_pipe, 0, sizeof(sa_pipe));
+	sa_pipe.handler = SIG_IGN;
+	sigemptyset(&sa_pipe.sa_mask);
+	if (sigaction(SIGPIPE, &sa_pipe, NULL) == 1) {
+		throw std::exception(); //Failed to ignore SIGPIPE
+	}
+	std::memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = signalHandler;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, NULL) == 1) {
+		throw std::exception(); //Failed to register SIGINT handler
+	}
 }
 
-const std::string   &Config::getPassword() throw() const {
-    return (_password);
+const std::string   Config::getPassword() throw() const {
+    return (_pass);
 }
 
 int                 Config::getPort() throw() const {

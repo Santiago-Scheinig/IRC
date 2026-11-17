@@ -1,217 +1,287 @@
 #include "Server.hpp"
-#include "Replies.hpp"
 
-Server::Server(int port, std::string pass) : _port(port), _pass(pass), _serverFd(-1) {
+/* ------------------------------------------------------------------------ */
+
+/* ---------------------------   CONSTRUCTORS   --------------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
+		Server::Server(Config init)
+					:	_port(init._port), _password(init._pass), _spareFD(-1) {
+	initFDS(initAddr(initSocket()));
 }
 
-Server::~Server() {
-	std::map<std::string, Channel*>::iterator itCh = _channels.begin();
-	while (itCh != _channels.end()) {
-		delete itCh->second;
-		_channels.erase(itCh++);
+/**
+ * 
+ */
+int		Server::initSocket() const {
+	int serverFD = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverFD < 0)
+		throw std::runtime_error(IRCFormatter::format(ERR_SCKT));
+	
+	int	opt = 1;
+	if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		close(serverFD);
+		throw std::runtime_error(IRCFormatter::format(ERR_SCKTOPT));
 	}
-	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-		close(it->first);
-		delete it->second;
+	
+	if (fcntl(serverFD, F_SETFL, O_NONBLOCK) < 0) {
+		close(serverFD);
+		throw std::runtime_error(IRCFormatter::format(ERR_FCNTL));
 	}
-	_clients.clear();
-	if (_serverFd != -1)
-		close(_serverFd);
+
+	return (serverFD);
 }
 
-void Server::initServer() {
-	_serverFd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_serverFd < 0)
-		throw std::runtime_error("socket() failed");
-	int opt = 1;
-	if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-		close(_serverFd);
-		throw std::runtime_error("setsockopt() failed");
+/**
+ * 
+ */
+int		Server::initAddr(const int serverFD) const {
+	struct sockaddr_in	address;
+	
+	std::memset(&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(_port);
+	
+	if (bind(serverFD, (struct sockaddr *) &address, sizeof(address)) < 0) {
+		close(serverFD);
+		throw std::runtime_error(IRCFormatter::format(ERR_BIND));
 	}
-	if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) < 0) {
-		close(_serverFd);
-		throw std::runtime_error("fcntl() failed");
+	
+	if (listen(serverFD, SOMAXCONN) < 0) {
+		close(serverFD);
+		throw std::runtime_error(IRCFormatter::format(ERR_LISTEN));
 	}
-	struct sockaddr_in addr;
-	std::memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(_port);
-	if (bind(_serverFd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		close(_serverFd);
-		_serverFd = -1;
-		throw std::runtime_error("bind() failed");
-	}
-	if (listen(_serverFd, SOMAXCONN) < 0) {
-		close(_serverFd);
-		_serverFd = -1;
-		throw std::runtime_error("listen() Failed");
-	}
-	struct pollfd pfd;
-	pfd.fd = _serverFd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	_pollFds.push_back(pfd);
+
+	return (serverFD);
 }
 
-void Server::deleteFd(size_t i) {
-	int fd = _pollFds[i].fd;
-	std::map<int, Client*>::iterator it = _clients.find(fd);
-	if (it != _clients.end()) {
-		removeClientFromChannels(it->second);
-		delete it->second;
-		_clients.erase(it);
-	}
-	close(fd);
-	_pollFds[i] = _pollFds.back();
-	_pollFds.pop_back();
-}
+/**
+ * 
+ */
+void	Server::initFDS(const int serverFD) {
+	_pollFD.fd = serverFD;
+	_pollFD.events = POLLIN;
+	_pollFD.revents = 0;
 
-void Server::removeClientFromChannels(Client *client) {
-	std::map<std::string, Channel*>::iterator it = _channels.begin();
-	while (it != _channels.end()) {
-		Channel *channel = it->second;
-		channel->removeMember(client);
-		if (channel->isEmpty()) {
-			delete channel;
-			std::map<std::string, Channel*>::iterator current = it;
-			++it;
-			_channels.erase(current);
-		}
-		else
-			++it;
+	_spareFD = open("/dev/null", O_RDONLY);
+	if (_spareFD < 0) {
+		close(_pollFD.fd);
+		throw std::runtime_error(IRCFormatter::format(ERR_OPEN));
 	}
 }
 
-void Server::run() {
-	while (true) {
-		int pollret = poll(&_pollFds[0], _pollFds.size(), -1);
-		if (pollret < 0) {
-			if (errno == EINTR)
+/**
+ * 
+ */
+		Server::~Server() {
+	while (!_clientArr.empty())
+		deleteClient(_clientArr.begin());
+	close(_pollFD.fd);
+	close(_spareFD);
+}
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------      SERVER MANAGMENT      ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
+void	Server::run() {
+
+	while (!g_shutdown) {
+		std::vector<struct pollfd> pollArr;
+
+		pollArr.push_back(_pollFD);
+		for (std::map<int, Socket *>::iterator client_it = _clientArr.begin(); client_it != _clientArr.end(); ++client_it)
+			pollArr.push_back(client_it->second->getPollFD());
+		
+		if (poll(&pollArr[0], pollArr.size(), -1) < 0) {
+			if (errno == EINTR) {
+				if (g_shutdown)
+					break;
 				continue;
-			throw std::runtime_error("poll() Failed");
+			}
+			throw std::runtime_error(IRCFormatter::format(ERR_POLL));
 		}
-		for (size_t i = 0; i != _pollFds.size(); ++i) {
-			short ev = _pollFds[i].revents;
-			if (ev & (POLLNVAL | POLLERR)) {
-				if ((ev & POLLERR) && _pollFds[i].fd == _serverFd)
-					throw std::runtime_error("_serverFd Failed, Fatal error!!");
-				deleteFd(i);
-				--i;
+		
+		if (pollArr[0].revents & (POLLERR | POLLNVAL))
+			throw std::runtime_error(IRCFormatter::format(ERR_LISTEN));
+		
+		try {
+			if (pollArr[0].revents & POLLIN)
+				addNewClient();
+		}
+		catch (IRCException::IRCException &e) {
+			//Handle failed client acceptance.
+		}	
+		
+		for (size_t i = 1; i < pollArr.size(); ++i) {
+			
+			if (g_shutdown)
+				break;
+			
+			if (!pollArr[i].revents)
 				continue;
+			
+			std::map <int, Socket *>::iterator client_it = _clientArr.find(pollArr[i].fd);
+	
+			if (client_it == _clientArr.end())
+				continue;
+				
+			try {
+				manageClient(client_it, pollArr[i].revents);
 			}
-			if (ev & (POLLIN | POLLHUP)) {
-				if (_pollFds[i].fd == _serverFd) {
-					if (ev & POLLHUP)
-						throw std::runtime_error("_serverFd Failed, Fatal error!!");
-					acceptNewClient();
-				}
-				else if (!receiveData(_pollFds[i].fd)) {
-					deleteFd(i);
-					--i;
-					continue;
-				}
+			catch (const IRCException::IRCException &e) {
+				//Handle client specific errors.
+				client_it = _clientArr.find(pollArr[i].fd);
+				if (client_it != _clientArr.end())
+					deleteClient(client_it);
 			}
-			if (ev & POLLOUT) {
-				if (_clients.find(_pollFds[i].fd) != _clients.end() && !sendData(_pollFds[i].fd)) {
-					deleteFd(i);
-					--i;
-					continue;
-				}
-			}
+		}
+		reapClosing();
+	}	
+}
+
+/**
+ * 
+ */
+bool	Server::matchPassword(const std::string &pass) const throw() {
+	return (_password == pass);
+}
+
+/**
+ * 
+ */
+void	Server::reapClosing() {
+	typedef std::map<int, Socket*>::iterator Socket_it;
+	
+	for (Socket_it pos = _clientArr.begin(); pos != _clientArr.end(); ;) {
+		Socket_it current_pos = pos++;
+		if (current_pos->second->isClosing() && !current_pos->second->hasPendingOutput()) {
+			deleteClient(current_pos);
 		}
 	}
 }
 
-void Server::acceptNewClient() {
-	struct sockaddr_in clientAddr;
-	socklen_t clientAddrLen = sizeof(clientAddr);
-	int clientFd = accept(_serverFd, (struct sockaddr *) &clientAddr, &clientAddrLen);
-	if (clientFd < 0)
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------      CLIENT MANAGMENT      ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
+void	Server::addNewClient() {
+	struct sockaddr_in	address;
+
+	int fd = acceptClient(address);
+
+	Socket *client = NULL;
+    try {
+        client = new Socket(fd, std::string(inet_ntoa(address.sin_addr)));
+        if (!_clientArr.insert(std::make_pair(fd, client)).second)
+            throw std::runtime_error(IRCFormatter::format(ERR_NEWCL));
+        client = NULL;
+    }
+    catch (...) {
+        delete client;
+        close(fd);
+        throw; //Throw a formatted message using the errno.
+    }
+}
+
+/**
+ * 
+ */
+int		Server::acceptClient(struct sockaddr_in &address) {
+    socklen_t addrlen = sizeof(address);
+
+    int fd = accept(_pollFD.fd, (struct sockaddr *)&address, &addrlen);
+    if (fd < 0) {
+        if (errno == EMFILE || errno == ENFILE) {
+            close(_spareFD);
+            _spareFD = -1;
+            int tmp = accept(_pollFD.fd, NULL, NULL);
+            if (tmp >= 0) {
+                const char msg[] = "ERROR: server full\r\n"; //Needs reply formatting.
+                send(tmp, msg, sizeof(msg) - 1, MSG_NOSIGNAL);
+                close(tmp);
+            }
+            _spareFD = open("/dev/null", O_RDONLY);
+        }
+        throw IRCException::IRCException(ERR_INVCLIENT, "failed to accept client address");
+    }
+	
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+        close(fd);
+        throw IRCException::IRCException(ERR_INVCLIENT, "failed to initialize client [fcntl()]");
+    }
+
+	return (fd);
+}
+
+/**
+ * 
+ */
+void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short revents) {
+	std::string	line;
+
+	Socket	*client = client_it->second;
+	bool	alive = true;
+	
+	//Invalid descriptor: remove immediatly.
+	if (revents & POLLNVAL) {
+		deleteClient(client_it);
 		return;
-	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0) {
-		close(clientFd);
-		return;
 	}
-	struct pollfd pfd;
-	pfd.fd = clientFd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	_pollFds.push_back(pfd);
-	_clients[clientFd] = new Client(clientFd, std::string(inet_ntoa(clientAddr.sin_addr)));
-}
-
-bool Server::receiveData(int fd) {
-	std::map<int, Client*>::iterator it = _clients.find(fd);
-	if (it == _clients.end())
-		return false;
-	Client *client = it->second;
-	char buf[512];
-	ssize_t n = recv(fd, buf, sizeof(buf), 0);
-	if (n == 0)
-		return false;
-	if (n < 0)
-		return true;
-	std::string pending(buf, static_cast<std::size_t>(n));
-	while (true) {
-		Message msg;
-		Parser::Parse_e result = client->parseData(pending, msg);
-		pending.clear();
-		if (result == Parser::PARSE_INCOMPLETE)
-			break;
-		if (result == Parser::PARSE_INVALID) {
-			Replies::numeric("ircserver", "421", client->getNickName(), "Unknown command: " + msg.getCommand());
-			enableWrite(fd);
-			continue;
-		}
-		if (result == Parser::PARSE_MESSAGE) {
-			//ejecutar el command.registry de msg aqui.
-		}
-		//registry.dispatch(); 
-	}
-	return true;
-}
-
-bool Server::sendData(int fd) {
-	std::map<int, Client*>::iterator it = _clients.find(fd);
-	if (it == _clients.end())
-		return false;
-	Client *client = it->second;
-	std::string &out = client->outputBuffer();
-	if (out.empty()) {
-		for (size_t i = 0; i != _pollFds.size(); ++i) {
-			if (_pollFds[i].fd == fd) {
-				_pollFds[i].events &= ~POLLOUT;
-				break;
+	
+	//Read avalible data. Process every complete line in the receive buffer.
+	if (revents & (POLLIN | POLLHUP | POLLERR) && !client->isClosing()) {
+		alive = client->dataRead();
+		while (alive && !client->isClosing() && client->nextLine(line)) {
+			if (line.empty())
+				continue;
+			try {
+				Message cmd(Parser::)
+				CommandRegistry::exe(Parser::processInput(line), *this, *client);
+			}
+			catch(const IRCException::IRCexception &e) {
+				//Handle invalid IRC message.
+					//Build a reply of invalid input. Fill the client _buffOut with it.
+				//Continue processing subsequent complete lines.
 			}
 		}
-		return true;
 	}
-	ssize_t n = send(fd, out.c_str(), out.size(), MSG_NOSIGNAL);
-	if (n <= 0)
-		return true;
-	out.erase(0, static_cast<std::size_t>(n));
-	if (!client->hasPendingOutput()) {
-		for (size_t i = 0; i != _pollFds.size(); ++i) {
-			if (_pollFds[i].fd == fd)
-				_pollFds[i].events &= ~POLLOUT;
-				break;
-		}
-	}
-	return true;
+	
+	//Flush pending output.
+	if (alive && (revents & POLLOUT))
+		alive = client->dataSend();
+	
+	//Remove dead or disconnected clients.
+	if (!alive || (revents & (POLLHUP | POLLERR)))
+		deleteClient(client_it);
 }
 
-void Server::enableWrite(int fd) {
-	for (size_t i = 0; i != _pollFds.size(); ++i) {
-		if (_pollFds[i].fd == fd) {
-			_pollFds[i].events |= POLLOUT;
-			return;
-		}
-	}
+/**
+ * 
+ */
+void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
+	close(client_it->first);
+	delete client_it->second;
+	_clientArr.erase(client_it);
 }
 
-// checks if the password matches the one in the config file
-// this functions wshould be called for PASS command
-bool Server::passwordMatches(const std::string &pass) const {
-	return this->_pass == pass;
-}
+/* ------------------------------------------------------------------------ */
+
+/* ---------------------------        END       --------------------------- */
+
+/* ------------------------------------------------------------------------ */
