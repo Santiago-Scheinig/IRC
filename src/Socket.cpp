@@ -1,5 +1,7 @@
 #include "Socket.hpp"
 
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <string>
 
 
@@ -12,7 +14,7 @@
 /**
  * 
  */
-		Socket::Socket(int fd, const &std::string ip)	
+		Socket::Socket(int fd, const std::string &ip)	
 			:	_ip(ip), _hasPass(false), _registered(false), _closing(false) {
 	_pollFD.fd = fd;
 	_pollFD.events = POLLIN;
@@ -180,7 +182,7 @@ const int				&Socket::getFD() const throw() {
 /**
  * 
  */
-const int				&Socket::getIP() const throw() {
+const std::string		&Socket::getIP() const throw() {
 	return (_ip);
 }
 
