@@ -3,14 +3,15 @@
 #include <iostream>
 #include <exception>
 
+volatile sig_atomic_t	g_shutdown = 0;
+
 int	main(int argc, char** argv)
 {
 	Config::installSignalHandlers();
 	try
 	{
-		Config	config(argc, argv);
-		Server	server(config);
-		server.initServer();
+		Config	dflt(argc, argv);
+		Server	server(dflt);
 		server.run();
 	}
 	catch (const std::exception& e)

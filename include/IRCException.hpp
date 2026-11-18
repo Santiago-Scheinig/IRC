@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IRCException.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
+/*   By: eduaserr < eduaserr@student.42malaga.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:24:12 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:16:27 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/18 21:11:01 by eduaserr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,9 +34,20 @@ enum ircErrco {
 	SUCCESS,
 	ERR_MEM,
 	ERR_SCKT,
+	ERR_SCKTOPT,
+	ERR_FCNTL,
+	ERR_BIND,
+	ERR_LISTEN,
+	ERR_OPEN,
+	ERR_POLL,
+	ERR_NEWCL,
+	ERR_EXECLIENT,
+	ERR_INVCLIENT,
+	PARSE_INVALID,
+	PARSE_INCOMPLETE,
 	R_INVCMD = 421,
 	R_INVNICKNAME = 433,
-	R_INVCMDARGS = 461,
+	R_INVCMDARGS = 461
 };
 
 /**
@@ -60,8 +71,8 @@ class IRCException : public std::exception {
 class IRCFormatter {
 
 	private:
-							IRCErrcoFormatter();
-							~IRCErrcoFormatter();
+							IRCFormatter();
+							~IRCFormatter();
 	
 	public:
 		static std::string	format(ircErrco errco);

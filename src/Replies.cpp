@@ -1,8 +1,6 @@
 #include "../include/Replies.hpp"
 
-Replies::Replies()
-{
-}
+Replies::Replies(){}
 // REGISTER REPLIES
 std::string Replies::capLs(const std::string &target, const std::string &capabilities)
 {

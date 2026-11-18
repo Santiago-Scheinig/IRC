@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IRCException.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
+/*   By: eduaserr < eduaserr@student.42malaga.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:21 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:23:52 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/18 21:12:00 by eduaserr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ const char	*IRCException::what() const throw() {
 
 std::string	IRCFormatter::format(ircErrco errco) {
 	std::stringstream	ss;
-
+//Should? add a break in every case?
 	switch (errco) {
 		case SUCCESS:
 			ss << INFO << "Success!" << END;
@@ -50,7 +50,10 @@ std::string	IRCFormatter::format(ircErrco errco) {
 
 std::string	IRCFormatter::format(std::string category, std::string msg) {
 	std::stringstream	ss;
+	std::string upperCase = category;
 
-	ss << ERROR << "[" << std::toUpper(category) << "]" << END << INFO << msg << END;
+	for (std::size_t i = 0; i < upperCase.size(); ++i)
+		upperCase[i] = std::toupper(upperCase[i]);
+	ss << ERROR << "[" << upperCase << "]" << END << INFO << msg << END;
 	return (ss.str());
 }
