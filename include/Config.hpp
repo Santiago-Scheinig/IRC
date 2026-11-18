@@ -30,7 +30,6 @@ class Config {
                             Config();
                             Config(const Config &other);
         Config              &operator=(const Config &other);
-                            ~Config() throw();
 
         void                parsePort(const std::string &s);
         void                parsePassword(const std::string &s);
@@ -39,9 +38,10 @@ class Config {
     
     public:
                             Config(int argc, char **argv);
+                            ~Config() throw();
 
-        const std::string   &getPassword() throw() const;
-        int                 getPort() throw() const;
+        const std::string   &getPassword() const throw();
+        int                 getPort() const throw();
 
 };
 

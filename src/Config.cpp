@@ -29,7 +29,7 @@
 }
 
 Config              &Config::operator=(const Config &other){
-    if (this != other) {
+    if (this != &other) {
         _port = other._port;
         _pass = other._pass;
     }
@@ -89,10 +89,10 @@ void                Config::initSignalHandler() {
 	}
 }
 
-const std::string   Config::getPassword() throw() const {
+const std::string   &Config::getPassword() const throw() {
     return (_pass);
 }
 
-int                 Config::getPort() throw() const {
+int                 Config::getPort() const throw() {
     return (_port);
 }

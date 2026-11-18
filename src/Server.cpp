@@ -10,7 +10,7 @@
  * 
  */
 		Server::Server(Config init)
-					:	_port(init._port), _password(init._pass), _spareFD(-1) {
+					:	_port(init.getPort()), _password(init.getPassword()), _spareFD(-1) {
 	initFDS(initAddr(initSocket()));
 }
 
@@ -218,11 +218,13 @@ int		Server::acceptClient(struct sockaddr_in &address) {
             }
             _spareFD = open("/dev/null", O_RDONLY);
         }
+		//Where is this constructor coming from?
         throw IRCException::IRCException(ERR_INVCLIENT, "failed to accept client address");
     }
 	
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
         close(fd);
+		//its here also!
         throw IRCException::IRCException(ERR_INVCLIENT, "failed to initialize client [fcntl()]");
     }
 
@@ -251,7 +253,7 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 			if (line.empty())
 				continue;
 			try {
-				Message cmd(Parser::)
+				Message cmd(Parser::) //What is this?
 				CommandRegistry::exe(Parser::processInput(line), *this, *client);
 			}
 			catch(const IRCException::IRCexception &e) {

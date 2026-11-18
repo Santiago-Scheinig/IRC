@@ -34,13 +34,20 @@ enum ircErrco {
 	SUCCESS,
 	ERR_MEM,
 	ERR_SCKT,
+	ERR_SCKTOPT,
+	ERR_FCNTL,
+	ERR_BIND,
+	ERR_LISTEN,
+	ERR_OPEN,
+	ERR_POLL,
+	ERR_NEWCL,
 	ERR_EXECLIENT,
 	ERR_INVCLIENT,
 	PARSE_INVALID,
 	PARSE_INCOMPLETE,
 	R_INVCMD = 421,
 	R_INVNICKNAME = 433,
-	R_INVCMDARGS = 461,
+	R_INVCMDARGS = 461
 };
 
 /**
@@ -64,8 +71,8 @@ class IRCException : public std::exception {
 class IRCFormatter {
 
 	private:
-							IRCErrcoFormatter();
-							~IRCErrcoFormatter();
+							IRCFormatter();
+							~IRCFormatter();
 	
 	public:
 		static std::string	format(ircErrco errco);
