@@ -8,41 +8,20 @@
 class Parser
 {
 	public:
-		enum Parse_e			//e_num creado para identifiar cada salida de parser
-		{
-			PARSE_INCOMPLETE,
-			PARSE_MESSAGE,
-			PARSE_INVALID
-		};
-
-		Parser();
-		/**
-		* We are missing the other OCF functions, its normative.
-		*/
-		~Parser();
-
-		//This function should be static, that way i dont have to initialize a Parser object to parse
-		//something, likely why Client had a Parser _parser object. Which is redundant.
-		//Instead we do:
-		// Message processInput(std::string inputBuffer);
-		//The parser should then split the information, verify if its correct and return a created
-		//Message object with all its information already initialized and ready to use.
-		//If something fails, then an exception is thrown, which is catched by the main loop and handled as
-		//its supposed to.
-		Parse_e processInput(const std::string &data, Message &message);
+		static Message processInput(const std::string &line);
 
 	private:
+		Parser();
+		~Parser();
 		Parser(const Parser &other);
 		Parser &operator=(const Parser &other);
 
-		std::string _inputBuffer;
-
-		Parse_e _parseLine(const std::string &line, Message &message) const;
-		Parse_e _readPrefix(const std::string &line, std::size_t &pos, std::string &prefix) const;
-		Parse_e _readCommand(const std::string &line, std::size_t &pos, std::string &cmd) const;
-		Parse_e _readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing) const;
-		void _skipSpaces(const std::string &line, std::size_t &pos) const;
-		std::string _toUpper(const std::string &text) const;
+		static Message _parseLine(const std::string &line);
+		static void _readPrefix(const std::string &line, std::size_t &pos, std::string &prefix);
+		static void _readCommand(const std::string &line, std::size_t &pos, std::string &cmd);
+		static void _readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing);
+		static void _skipSpaces(const std::string &line, std::size_t &pos);
+		static std::string _toUpper(const std::string &text);
 
 };
 

@@ -1,65 +1,41 @@
 #include "../include/Parser.hpp"
+#include "../include/IRCException.hpp"
 
 #include <cctype>
 
-Parser::Parser() : _inputBuffer(){}
-
-Parser::~Parser() {}
-
-/**
- * processInput should return a Message object instead of taking its reference.
- */
-Parser::Parse_e Parser::processInput(const std::string &input, Message &message)
+Message Parser::processInput(const std::string &line)
 {
-	std::size_t	end;
-	std::string	line;
-
-	_inputBuffer += input;				// haya o no haya input rabajamos en inputbuffer
-	end = _inputBuffer.find("\r\n");
-	// Sin CRLF aun no hay linea completa: conservamos el buffer.
-	if (end == std::string::npos)
-		return PARSE_INCOMPLETE;
-	line = _inputBuffer.substr(0, end);
-	_inputBuffer.erase(0, end + 2);
-	// La linea existe, pero no contiene ningun comando que parsear.
 	if (line.empty())
-		return PARSE_INVALID; //throw IRCException::IRCException(PARSE_INVALID);
-	return _parseLine(line, message);		// devolvemos true y message struct.
+		throw IRCException(PARSE_INVALID);
+	return _parseLine(line);
 }
 
-void Parser::_skipSpaces(const std::string &line, std::size_t &pos) const
+void Parser::_skipSpaces(const std::string &line, std::size_t &pos)
 {
 	while (pos < line.size() && line[pos] == ' ')
 		pos++;
 }
 
-/**
- * We can use exceptions, and turn this function into a void return, specially since is const.
- */
-Parser::Parse_e Parser::_readPrefix(const std::string &line, std::size_t &pos, std::string &prefix) const
+void Parser::_readPrefix(const std::string &line, std::size_t &pos, std::string &prefix)
 {
 	std::size_t	space;
 
 	if (pos >= line.size() || line[pos] != ':')
-		return PARSE_MESSAGE;
+		return;
 	space = line.find(' ', pos);
 	if (space == std::string::npos || space == pos + 1) //prefix debe ser :prefix
-		return PARSE_INVALID; //std::error prefijo invalido
+		throw IRCException(PARSE_INVALID);
 	prefix = line.substr(pos + 1, space - pos - 1);
 	pos = space + 1;									// actualizamos pos al inicio de sigiente palabra
-	return PARSE_MESSAGE;
 }
 
-/**
- * We can use exceptions, and turn this function into a void return, specially since is const.
- */
-Parser::Parse_e Parser::_readCommand(const std::string &line, std::size_t &pos, std::string &cmd) const
+void Parser::_readCommand(const std::string &line, std::size_t &pos, std::string &cmd)
 {
 	std::size_t	space;
 
 	_skipSpaces(line, pos);
 	if (pos >= line.size() || line[pos] == ':')
-		return PARSE_INVALID; // despues del prefijo debe existir un comando.
+		throw IRCException(PARSE_INVALID);
 	space = line.find(' ', pos);
 	if (space == std::string::npos)
 		cmd = line.substr(pos);
@@ -69,15 +45,11 @@ Parser::Parse_e Parser::_readCommand(const std::string &line, std::size_t &pos, 
 		pos = space + 1;
 	}
 	if (cmd.empty())
-		return PARSE_INVALID; // no podemos construir un Message sin comando.
+		throw IRCException(PARSE_INVALID);
 	cmd = _toUpper(cmd);
-	return PARSE_MESSAGE;
 }
 
-/**
- * We can use exceptions, and turn this function into a void return, specially since is const.
- */
-Parser::Parse_e Parser::_readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing) const
+void Parser::_readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing)
 {
 	std::size_t	space;
 
@@ -90,7 +62,7 @@ Parser::Parse_e Parser::_readParams(const std::string &line, std::size_t &pos, s
 		{
 			trailing = line.substr(pos + 1);
 			hasTrailing = true;
-			return PARSE_MESSAGE; // ':' consume todo el resto como trailing.
+			return;
 		}
 		space = line.find(' ', pos);
 		if (space == std::string::npos)
@@ -101,13 +73,9 @@ Parser::Parse_e Parser::_readParams(const std::string &line, std::size_t &pos, s
 		params.push_back(line.substr(pos, space - pos));
 		pos = space + 1;
 	}
-	return PARSE_MESSAGE; // cero parametros tambien puede ser sintacticamente valido.
 }
 
-/**
- * We can use exceptions, and turn this function into a void return, specially since is const.
- */
-Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) const
+Message Parser::_parseLine(const std::string &line)
 {
 	std::size_t	pos = 0;		//en cada funcion actualizamos pos para mantener el index en line actualizado correctamente
 	std::string	prefix;
@@ -117,21 +85,14 @@ Parser::Parse_e Parser::_parseLine(const std::string &line, Message &message) co
 	bool		hasTrailing = false;
 
 	if (line.empty())
-		return PARSE_INVALID; // CRLF sin contenido: linea invalida.
-	if (_readPrefix(line, pos, prefix) == PARSE_INVALID)
-		return PARSE_INVALID;
-	if (_readCommand(line, pos, command) == PARSE_INVALID)
-		return PARSE_INVALID;
-	if (_readParams(line, pos, params, trailing, hasTrailing) == PARSE_INVALID)
-		return PARSE_INVALID;
-	message = Message(prefix, command, params, trailing, hasTrailing);
-	return PARSE_MESSAGE;
+		throw IRCException(PARSE_INVALID);
+	_readPrefix(line, pos, prefix);
+	_readCommand(line, pos, command);
+	_readParams(line, pos, params, trailing, hasTrailing);
+	return Message(prefix, command, params, trailing, hasTrailing);
 }
 
-/**
- * Pretty sure there's already a function std:: that does this.
- */
-std::string Parser::_toUpper(const std::string &cmd) const
+std::string Parser::_toUpper(const std::string &cmd)
 {
 	std::string tmp = cmd;
 
