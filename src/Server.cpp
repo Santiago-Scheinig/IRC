@@ -282,6 +282,29 @@ void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
 	_clientArr.erase(client_it);
 }
 
+
+Channel *Server::getChannel(const std::string &name) const {
+	std::map<std::string, Channel *>::const_iterator it = _channels.find(name);
+	if (it == _channels.end())
+		throw IRCException::IRCException(R_NOCHAN, "channel not found"); //Needs the right reply code.
+	return it->second;
+}
+
+Channel *Server::getOrCreate(const std::string &name) {}
+void 	Server::removeChannel(const std::string &name) {}
+Socket 	*Server::findClientByNick(const std::string &nick) const {}
+
+void Server::removeClientFromChannels(Socket *client) {
+	for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+		if (it->second->hasMember(client)) {
+			it->second->removeMember(client);
+			if (it->second->isEmpty()) {
+				delete it->second;
+				_channels.erase(it);
+			}
+		}
+	}
+}
 /* ------------------------------------------------------------------------ */
 
 /* ---------------------------        END       --------------------------- */

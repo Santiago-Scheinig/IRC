@@ -15,33 +15,53 @@ const std::string &Channel::getName() const {
     return _name;
 }
 
-void Channel::addMember(Client *client, bool isOperator) {
+const std::string &Channel::getTopic() const {
+    return _topic;
+}
+
+const std::string &Channel::getKey() const {
+    return _key;
+}
+
+size_t Channel::getLimit() const {
+    return _limit;
+}
+
+bool Channel::getInviteOnly() const {
+    return _inviteOnly;
+}
+
+void Channel::setTopic(cosnt std::string &topic) {
+    _topic = topic;
+}
+
+void Channel::addMember(Socket *client, bool isOperator) {
     if (client == NULL)
         return;
-    std::map<Client *, bool>::iterator it = _members.find(client);
+    std::map<Socket *, bool>::iterator it = _members.find(client);
     if (it == _members.end())
         _members.insert(std::make_pair(client, isOperator));
     _invited.erase(client);
 }
 
-void Channel::addOperator(Client *client) {
-    std::map<Client *, bool>::iterator it = _members.find(client);
+void Channel::addOperator(Socket *client) {
+    std::map<Socket *, bool>::iterator it = _members.find(client);
     if (it == _members.end())
         return;
     it->second = true;
 }
 
-void Channel::removeMember(Client *client) {
+void Channel::removeMember(Socket *client) {
     _members.erase(client);
     _invited.erase(client);
 }
 
-bool Channel::hasMember(const Client *client) const {
-    return _members.find(const_cast<Client*>(client)) != _members.end();
+bool Channel::hasMember(Socket *client) const {
+    return _members.find(const_cast<Socket*>(client)) != _members.end();
 }
 
-bool Channel::isOperator(const Client *client) const {
-    std::map<Client *, bool>::const_iterator it = _members.find(const_cast<Client*>(client));
+bool Channel::isOperator(Socket *client) const {
+    std::map<Socket *, bool>::const_iterator it = _members.find(const_cast<Client*>(client));
     if (it == _members.end())
         return false;
     return it->second;
@@ -53,4 +73,12 @@ bool Channel::isEmpty() const {
 
 size_t Channel::memberCount() const {
     return _members.size();
+}
+
+void Channel::broadcast(const std::string &msg, Socket *exclude) {
+    for (std::map<Socket *, bool>::iterator it = _members.begin(); it != _members.end(); ++it) {
+        if (it->first == exclude)
+            continue;
+        it->first->queueOutgoing(msg);
+    }
 }

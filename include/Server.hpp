@@ -17,6 +17,7 @@
 #	include <sys/types.h>
 #	include <arpa/inet.h>
 #	include <netinet/in.h>
+#	include "Channel.hpp"
 
 class Server {
 	private:
@@ -27,7 +28,7 @@ class Server {
 		std::map<int , Socket*>	_clientArr;
 		struct pollfd			_pollFD;
 		int						_spareFD;
-
+		std::map<std::string, Channel *> _channels;
 								Server(const Server &copy);
 								Server& operator=(const Server &copy);
 
@@ -49,6 +50,11 @@ class Server {
 
 		void 					run();
 		bool 					matchPassword(const std::string &pass) const throw();
+		Channel 				*getChannel(const std::string &name) const;
+		Channel 				*getOrCreate(const std::string &name);
+		void 					removeChannel(const std::string &name);
+		Socket 					*findClientByNick(const std::string &nick) const;
+		void 					removeClientFromChannels(Socket *client);
 };
 
 #endif

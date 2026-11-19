@@ -5,30 +5,37 @@
 #include <map>
 #include <set>
 #include <cstddef>
-
-class Client;
+#include "Socket.hpp"
 
 class Channel {
 	private:
 		std::string _name;
-		std::map<Client *, bool> _members;
+		std::map<Socket *, bool> _members;
 		std::string _topic;
 		std::string _key;
 		size_t _limit;
 		bool _inviteOnly;
 		bool _topicRestricted;
-		std::set<Client *> _invited;
+		std::set<Socket *> _invited;
 	public:
 		Channel(const std::string &name);
 		~Channel();
 		const std::string &getName() const;
-		void addMember(Client *client, bool isOperator);
-		void addOperator(Client *client);
-		void removeMember(Client *client);
-		bool hasMember(const Client *client) const;
-		bool isOperator(const Client *client) const;
+
+		const std::string &getTopic() const;
+		const std::string &getKey() const;
+		size_t getLimit() const;
+		bool getInviteOnly() const;
+
+		void setTopic(const std::string &topic);
+		void addMember(Socket *client, bool isOperator);
+		void addOperator(Socket *client);
+		void removeMember(Socket *client);
+		bool hasMember(const Socket *client) const;
+		bool isOperator(const Socket *client) const;
 		bool isEmpty() const;
 		size_t memberCount() const;
+		void broadcast(const std::string &msg, Socket *exclude);
 };
 
 #endif
