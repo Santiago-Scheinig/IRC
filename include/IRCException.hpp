@@ -28,6 +28,8 @@
  * R_INVCMD, Invalid IRC command (send Reply)
  * R_INVNICKNAME, Nickname already in use (send Reply)
  * R_INVCMDARGS, Missing command parameters (send Reply)
+ * R_NOCHAN, Channel not found (send Reply)
+ * R_NOCLIENT, Client not found (send Reply)
  */
 enum ircErrco {
 	CUSTOM = 0,
@@ -47,7 +49,9 @@ enum ircErrco {
 	PARSE_INCOMPLETE,
 	R_INVCMD = 421,
 	R_INVNICKNAME = 433,
-	R_INVCMDARGS = 461
+	R_INVCMDARGS = 461,
+	R_NOCHAN = 403,
+	R_NOCLIENT = 401,
 };
 
 /**

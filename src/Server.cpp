@@ -282,7 +282,7 @@ void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
 	_clientArr.erase(client_it);
 }
 
-
+//Used to get a channel if it exists. PRIVMSG, MODE, KICK, PART.
 Channel *Server::getChannel(const std::string &name) const {
 	std::map<std::string, Channel *>::const_iterator it = _channels.find(name);
 	if (it == _channels.end())
@@ -290,9 +290,31 @@ Channel *Server::getChannel(const std::string &name) const {
 	return it->second;
 }
 
-Channel *Server::getOrCreate(const std::string &name) {}
-void 	Server::removeChannel(const std::string &name) {}
-Socket 	*Server::findClientByNick(const std::string &nick) const {}
+//Used to create a channel if it doesn't exist. JOIN
+Channel *Server::getOrCreate(const std::string &name) {
+	std::map<std::string, Channel *>::iterator it = _channels.find(name);
+	if (it != _channels.end())
+		return it->second;
+	Channel *channel = new Channel(name);
+	_channels.insert(std::make_pair(name, channel));
+	return channel;
+}
+
+void 	Server::removeChannel(const std::string &name) {
+	std::map<std::string, Channel *>::iterator it = _channels.find(name);
+	if (it == _channels.end())
+		throw IRCException::IRCException(R_NOCHAN, IRCFormatter::format(R_NOCHAN));
+	delete it->second;
+	_channels.erase(it);
+}
+
+Socket 	*Server::findClientByNick(const std::string &nick) const {
+	for (std::map<int, Socket *>::const_iterator it = _clientArr.begin(); it != _clientArr.end(); ++it) {
+		if (it->second->getNick() == nick)
+			return it->second;
+	}
+	throw IRCException::IRCException(R_NOCLIENT, IRCFormatter::format(R_NOCLIENT));
+}
 
 void Server::removeClientFromChannels(Socket *client) {
 	for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
