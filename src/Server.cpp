@@ -83,6 +83,10 @@ void	Server::initFDS(const int serverFD) {
 		deleteClient(_clientArr.begin());
 	close(_pollFD.fd);
 	close(_spareFD);
+	while (!_channels.empty()) {
+		delete _channels.begin()->second;
+		_channels.erase(_channels.begin());
+	}
 }
 
 /* ------------------------------------------------------------------------ */
@@ -277,6 +281,7 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
  * 
  */
 void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
+	removeClientFromChannels(client_it->second);
 	close(client_it->first);
 	delete client_it->second;
 	_clientArr.erase(client_it);
@@ -286,7 +291,7 @@ void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
 Channel *Server::getChannel(const std::string &name) const {
 	std::map<std::string, Channel *>::const_iterator it = _channels.find(name);
 	if (it == _channels.end())
-		throw IRCException::IRCException(R_NOCHAN, "channel not found"); //Needs the right reply code.
+		throw IRCException::IRCException("R_NOCHAN", "channel not found"); //Needs the right reply code.
 	return it->second;
 }
 
@@ -303,28 +308,36 @@ Channel *Server::getOrCreate(const std::string &name) {
 void 	Server::removeChannel(const std::string &name) {
 	std::map<std::string, Channel *>::iterator it = _channels.find(name);
 	if (it == _channels.end())
-		throw IRCException::IRCException(R_NOCHAN, IRCFormatter::format(R_NOCHAN));
+		throw IRCException::IRCException("R_NOCHAN", IRCFormatter::format(R_NOCHAN));
 	delete it->second;
 	_channels.erase(it);
 }
 
 Socket 	*Server::findClientByNick(const std::string &nick) const {
 	for (std::map<int, Socket *>::const_iterator it = _clientArr.begin(); it != _clientArr.end(); ++it) {
-		if (it->second->getNick() == nick)
+		if (it->second->getNickname() == nick)
 			return it->second;
 	}
-	throw IRCException::IRCException(R_NOCLIENT, IRCFormatter::format(R_NOCLIENT));
+	throw IRCException::IRCException("R_NOCLIENT", IRCFormatter::format(R_NOCLIENT));
 }
 
 void Server::removeClientFromChannels(Socket *client) {
-	for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
-		if (it->second->hasMember(client)) {
-			it->second->removeMember(client);
-			if (it->second->isEmpty()) {
-				delete it->second;
-				_channels.erase(it);
-			}
+	std::string prefix = client->getNickname() + "!" + client->getUsername() + "@" + client->getIP();
+	std::map<std::string, Channel *>::iterator it = _channels.begin();
+	while (it != _channels.end()) {
+		Channel *channel = it->second;
+		if (!channel->hasMember(client)) {
+			++it;
+			continue;
 		}
+		channel->removeMember(client);
+		channel->broadcast(msg, NULL);
+		if (channel->isEmpty()) {
+			++it;
+			continue;
+		}
+		_channels.erase(it++);
+		delete channel;
 	}
 }
 /* ------------------------------------------------------------------------ */

@@ -31,7 +31,7 @@ bool Channel::getInviteOnly() const {
     return _inviteOnly;
 }
 
-void Channel::setTopic(cosnt std::string &topic) {
+void Channel::setTopic(const std::string &topic) {
     _topic = topic;
 }
 
@@ -60,8 +60,8 @@ bool Channel::hasMember(Socket *client) const {
     return _members.find(const_cast<Socket*>(client)) != _members.end();
 }
 
-bool Channel::isOperator(Socket *client) const {
-    std::map<Socket *, bool>::const_iterator it = _members.find(const_cast<Client*>(client));
+bool Channel::isOperator(const Socket *client) const {
+    std::map<Socket *, bool>::const_iterator it = _members.find(const_cast<Socket *>(client));
     if (it == _members.end())
         return false;
     return it->second;
@@ -79,6 +79,6 @@ void Channel::broadcast(const std::string &msg, Socket *exclude) {
     for (std::map<Socket *, bool>::iterator it = _members.begin(); it != _members.end(); ++it) {
         if (it->first == exclude)
             continue;
-        it->first->queueOutgoing(msg);
+        it->first->queueOutput(msg);
     }
 }
