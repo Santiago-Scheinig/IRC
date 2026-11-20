@@ -119,7 +119,7 @@ void	Server::run() {
 			if (pollArr[0].revents & POLLIN)
 				addNewClient();
 		}
-		catch (IRCException::IRCException &e) {
+		catch (IRCException &e) {
 			//Handle failed client acceptance.
 		}	
 		
@@ -139,7 +139,7 @@ void	Server::run() {
 			try {
 				manageClient(client_it, pollArr[i].revents);
 			}
-			catch (const IRCException::IRCException &e) {
+			catch (const IRCException &e) {
 				//Handle client specific errors.
 				client_it = _clientArr.find(pollArr[i].fd);
 				if (client_it != _clientArr.end())
@@ -163,7 +163,7 @@ bool	Server::matchPassword(const std::string &pass) const throw() {
 void	Server::reapClosing() {
 	typedef std::map<int, Socket*>::iterator Socket_it;
 	
-	for (Socket_it pos = _clientArr.begin(); pos != _clientArr.end(); ;) {
+	for (Socket_it pos = _clientArr.begin(); pos != _clientArr.end();) {
 		Socket_it current_pos = pos++;
 		if (current_pos->second->isClosing() && !current_pos->second->hasPendingOutput()) {
 			deleteClient(current_pos);
@@ -219,13 +219,13 @@ int		Server::acceptClient(struct sockaddr_in &address) {
             _spareFD = open("/dev/null", O_RDONLY);
         }
 		//Where is this constructor coming from?
-        throw IRCException::IRCException(ERR_INVCLIENT, "failed to accept client address");
+        throw IRCException("ERR_INVCLIENT", "failed to accept client address");
     }
 	
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
         close(fd);
 		//its here also!
-        throw IRCException::IRCException(ERR_INVCLIENT, "failed to initialize client [fcntl()]");
+        throw IRCException("ERR_INVCLIENT", "failed to initialize client [fcntl()]");
     }
 
 	return (fd);
@@ -253,10 +253,9 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 			if (line.empty())
 				continue;
 			try {
-				Message cmd(Parser::) //What is this?
-				CommandRegistry::exe(Parser::processInput(line), *this, *client);
+				//CommandRegistry::exe(Parser::processInput(line), *this, *client);
 			}
-			catch(const IRCException::IRCexception &e) {
+			catch(const IRCException &e) {
 				//Handle invalid IRC message.
 					//Build a reply of invalid input. Fill the client _buffOut with it.
 				//Continue processing subsequent complete lines.

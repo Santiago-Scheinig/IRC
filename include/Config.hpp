@@ -15,6 +15,7 @@
 
 # include <string>
 # include <cctype>
+# include <cstring>
 # include <csignal>
 # include <iostream>
 # include <sstream>
@@ -28,15 +29,16 @@ class Config {
         std::string         _pass;
 
                             Config();
-                            Config(const Config &other);
         Config              &operator=(const Config &other);
 
         void                parsePort(const std::string &s);
         void                parsePassword(const std::string &s);
 
+        static void         signalHandler(int signum);
 		static void         initSignalHandler();
     
     public:
+                            Config(const Config &other);
                             Config(int argc, char **argv);
                             ~Config() throw();
 
@@ -44,7 +46,5 @@ class Config {
         int                 getPort() const throw();
 
 };
-
-static void			signalHandler(int signum);
 
 #endif

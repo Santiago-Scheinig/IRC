@@ -13,12 +13,12 @@
 #include "Config.hpp"
 
                     Config::Config() {
-    throw IRCException::IRCException("INV_CONSTRUCTOR", "Cant use default constructor for Config class");
+    throw IRCException("INV_CONSTRUCTOR", "Cant use default constructor for Config class");
 }
 
                     Config::Config(int argc, char **argv) {
     if (argc != 3)
-        throw IRCException::IRCException("INV_CONFIG", "usage: ./ircserv <port> <password>");
+        throw IRCException("INV_CONFIG", "usage: ./ircserv <port> <password>");
     parsePort(argv[1]);
     parsePassword(argv[2]);
     initSignalHandler();
@@ -39,34 +39,35 @@ Config              &Config::operator=(const Config &other){
                     Config::~Config() throw() {}
 
 void                Config::parsePort(const std::string &s) {
-    int size = s.size();
+    std::size_t    size = s.size();
 
     if (s.empty())
-        throw IRCException::IRCException("inv_port", "port is empty");
+        throw IRCException("inv_port", "port is empty");
     if (size > 5)
-        throw IRCException::IRCException("inv_port", "port values: [1 - 65535]");
+        throw IRCException("inv_port", "port values: [1 - 65535]");
     for (std::size_t i = 0; i < size; ++i)
         if (!std::isdigit(static_cast<unsigned char>(s[i])))
-            throw IRCException::IRCException("inv_port", "non numeric character found");
+            throw IRCException("inv_port", "non numeric character found");
     
     std::stringstream   stream(s);
 
     if (!(stream >> _port) || !stream.eof() || _port < 1 || _port > 65535)
-        throw IRCException::IRCException("inv_port", "port values: [1 - 65535]");
+        throw IRCException("inv_port", "port values: [1 - 65535]");
 }
 
 void                Config::parsePassword(const std::string &s) {
-    int size = s.size();
+    std::size_t    size = s.size();
     
     if (s.empty())
-        throw IRCException::IRCException("inv_password", "password cannot be empty");
-    for (std::size_t i = 0; i < size; i++)
+        throw IRCException("inv_password", "password cannot be empty");
+    for (std::size_t i = 0; i < size; ++i) {
         if (!std::isprint(static_cast<unsigned char>(s[i])))
-            throw IRCException::IRCException("inv_password", "password cannot have non printable characters");
+            throw IRCException("inv_password", "password cannot have non printable characters");
+    }
 	_pass = s;
 }
 
-void			signalHandler(int signum) {
+void			    Config::signalHandler(int signum) {
 	if (signum == SIGINT)
 		g_shutdown = 1;
 }
@@ -76,7 +77,7 @@ void                Config::initSignalHandler() {
 	struct sigaction	sa_pipe;
 
 	std::memset(&sa_pipe, 0, sizeof(sa_pipe));
-	sa_pipe.handler = SIG_IGN;
+	sa_pipe.sa_handler = SIG_IGN;
 	sigemptyset(&sa_pipe.sa_mask);
 	if (sigaction(SIGPIPE, &sa_pipe, NULL) == 1) {
 		throw std::exception(); //Failed to ignore SIGPIPE
