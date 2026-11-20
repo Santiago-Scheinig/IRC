@@ -18,7 +18,7 @@ class Channel {
 		bool 						_inviteOnly;
 		bool 						_topicRestricted;
 		std::set<Socket *> 			_invited;
-		
+
 	public:
 									Channel(const std::string &name);
 									~Channel();

@@ -56,7 +56,7 @@ void Channel::removeMember(Socket *client) {
     _invited.erase(client);
 }
 
-bool Channel::hasMember(Socket *client) const {
+bool Channel::hasMember(const Socket *client) const {
     return _members.find(const_cast<Socket*>(client)) != _members.end();
 }
 
