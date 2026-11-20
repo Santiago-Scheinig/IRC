@@ -6,7 +6,7 @@
 /*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:24:12 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:16:27 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/13 11:43:10 by sscheini         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,15 +28,30 @@
  * R_INVCMD, Invalid IRC command (send Reply)
  * R_INVNICKNAME, Nickname already in use (send Reply)
  * R_INVCMDARGS, Missing command parameters (send Reply)
+ * R_NOCHAN, Channel not found (send Reply)
+ * R_NOCLIENT, Client not found (send Reply)
  */
 enum ircErrco {
 	CUSTOM = 0,
 	SUCCESS,
 	ERR_MEM,
 	ERR_SCKT,
+	ERR_SCKTOPT,
+	ERR_FCNTL,
+	ERR_BIND,
+	ERR_LISTEN,
+	ERR_OPEN,
+	ERR_POLL,
+	ERR_NEWCL,
+	ERR_EXECLIENT,
+	ERR_INVCLIENT,
+	PARSE_INVALID,
+	PARSE_INCOMPLETE,
 	R_INVCMD = 421,
 	R_INVNICKNAME = 433,
 	R_INVCMDARGS = 461,
+	R_NOCHAN = 403,
+	R_NOCLIENT = 401,
 };
 
 /**
@@ -60,8 +75,8 @@ class IRCException : public std::exception {
 class IRCFormatter {
 
 	private:
-							IRCErrcoFormatter();
-							~IRCErrcoFormatter();
+							IRCFormatter();
+							~IRCFormatter();
 	
 	public:
 		static std::string	format(ircErrco errco);
