@@ -1,86 +1,37 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   IRCException.hpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/10/16 18:24:12 by sscheini          #+#    #+#             */
-/*   Updated: 2026/11/13 11:43:10 by sscheini         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef IRCEXCEPTION_HPP
 # define IRCEXCEPTION_HPP
 
-# define ERROR "\033[31m[ERROR]: "
-# define INFO "\033[33m\t[INFO]: "
-# define END ".\033[0m\n"
+# define ERROR "\033[31m[ERROR]\t"
+# define INFO "\033[33m[INFO]\t"
+# define CLEAN "\033[0m"
+# define END "\033[0m\n"
 
-# include <sstream>
-# include <stdexcept>
+# include <exception>
 # include <string>
 
-/**
- * SUCCESS,
- * ERR_MEM, Memory allocation error
- * ERR_SCKT, Socket creation error
- * R_INVCMD, Invalid IRC command (send Reply)
- * R_INVNICKNAME, Nickname already in use (send Reply)
- * R_INVCMDARGS, Missing command parameters (send Reply)
- * R_NOCHAN, Channel not found (send Reply)
- * R_NOCLIENT, Client not found (send Reply)
- */
-enum ircErrco {
-	CUSTOM = 0,
-	SUCCESS,
-	ERR_MEM,
-	ERR_SCKT,
-	ERR_SCKTOPT,
-	ERR_FCNTL,
-	ERR_BIND,
-	ERR_LISTEN,
-	ERR_OPEN,
-	ERR_POLL,
-	ERR_NEWCL,
-	ERR_EXECLIENT,
-	ERR_INVCLIENT,
-	PARSE_INVALID,
-	PARSE_INCOMPLETE,
-	R_INVCMD = 421,
-	R_INVNICKNAME = 433,
-	R_INVCMDARGS = 461,
-	R_NOCHAN = 403,
-	R_NOCLIENT = 401,
-};
+class IRCException : public std::exception
+{
 
-/**
- * If errco != 421 && errco != 433 && errco != 461
- * Then its a system error, otherwise its a Reply 
- */
-class IRCException : public std::exception {
-	
-	private:
-		std::string			_msg;
-		ircErrco			_errco;
+	protected:
+
+		struct 				prefix {
+			const errco 	code;
+			const char 		*msg; 
+		}    	
+    	
+    	std::string 		_message;
+
 
 	public:
-							IRCException(ircErrco errco);
-							IRCException(std::string category, std::string msg);
-		virtual				~IRCException() throw();
+    	
+    						IRCException(const std::string& message);
 
-		virtual const char	*what() const throw();
-};
+    	virtual				~IRCException() const throw();
 
-class IRCFormatter {
+    	const char*			what() const throw();
 
-	private:
-							IRCFormatter();
-							~IRCFormatter();
-	
-	public:
-		static std::string	format(ircErrco errco);
-		static std::string	format(std::string category, std::string msg);
+    	const std::string 	format() = 0;    	
+    	static void			initializeErrco() = 0;
 };
 
 #endif
