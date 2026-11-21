@@ -18,19 +18,21 @@
  * 
  */
 int		Server::initSocket() const {
+
 	int serverFD = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (serverFD < 0)
-		throw std::runtime_error(IRCFormatter::format(ERR_SCKT));
+		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	
 	int	opt = 1;
 	if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 		close(serverFD);
-		throw std::runtime_error(IRCFormatter::format(ERR_SCKTOPT));
+		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	}
 	
 	if (fcntl(serverFD, F_SETFL, O_NONBLOCK) < 0) {
 		close(serverFD);
-		throw std::runtime_error(IRCFormatter::format(ERR_FCNTL));
+		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	}
 
 	return (serverFD);
@@ -40,6 +42,7 @@ int		Server::initSocket() const {
  * 
  */
 int		Server::initAddr(const int serverFD) const {
+	
 	struct sockaddr_in	address;
 	
 	std::memset(&address, 0, sizeof(address));
@@ -49,12 +52,12 @@ int		Server::initAddr(const int serverFD) const {
 	
 	if (bind(serverFD, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		close(serverFD);
-		throw std::runtime_error(IRCFormatter::format(ERR_BIND));
+		throw SrvExc(SrvExc::SOCKET_BIND_FAILED, strerror(errno));
 	}
 	
 	if (listen(serverFD, SOMAXCONN) < 0) {
 		close(serverFD);
-		throw std::runtime_error(IRCFormatter::format(ERR_LISTEN));
+		throw SrvExc(SrvExc::SOCKET_BIND_FAILED, strerror(errno));
 	}
 
 	return (serverFD);
@@ -64,6 +67,7 @@ int		Server::initAddr(const int serverFD) const {
  * 
  */
 void	Server::initFDS(const int serverFD) {
+
 	_pollFD.fd = serverFD;
 	_pollFD.events = POLLIN;
 	_pollFD.revents = 0;
@@ -71,7 +75,7 @@ void	Server::initFDS(const int serverFD) {
 	_spareFD = open("/dev/null", O_RDONLY);
 	if (_spareFD < 0) {
 		close(_pollFD.fd);
-		throw std::runtime_error(IRCFormatter::format(ERR_OPEN));
+		throw SrvExc(SrvExc::SOCKET_BIND_FAILED, strerror(errno));
 	}
 }
 
@@ -109,17 +113,17 @@ void	Server::run() {
 					break;
 				continue;
 			}
-			throw std::runtime_error(IRCFormatter::format(ERR_POLL));
+			throw SrvExc(SrvExc::POLL_INITIALIZATION_FAILED, strerror(errno));
 		}
 		
 		if (pollArr[0].revents & (POLLERR | POLLNVAL))
-			throw std::runtime_error(IRCFormatter::format(ERR_LISTEN));
-		
+			throw SrvExc(SrvExc::INVALID_INTERNAL_STATE, strerror(errno));
 		try {
 			if (pollArr[0].revents & POLLIN)
 				addNewClient();
 		}
-		catch (IRCException &e) {
+		catch (const ClientException &e) {
+			std::cout << e.what();
 			//Handle failed client acceptance.
 		}	
 		
@@ -139,7 +143,7 @@ void	Server::run() {
 			try {
 				manageClient(client_it, pollArr[i].revents);
 			}
-			catch (const IRCException &e) {
+			catch (const ClientException &e) {
 				//Handle client specific errors.
 				client_it = _clientArr.find(pollArr[i].fd);
 				if (client_it != _clientArr.end())
@@ -189,7 +193,7 @@ void	Server::addNewClient() {
     try {
         client = new Socket(fd, std::string(inet_ntoa(address.sin_addr)));
         if (!_clientArr.insert(std::make_pair(fd, client)).second)
-            throw std::runtime_error(IRCFormatter::format(ERR_NEWCL));
+            throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
         client = NULL;
     }
     catch (...) {
@@ -218,14 +222,12 @@ int		Server::acceptClient(struct sockaddr_in &address) {
             }
             _spareFD = open("/dev/null", O_RDONLY);
         }
-		//Where is this constructor coming from?
-        throw IRCException("ERR_INVCLIENT", "failed to accept client address");
+        throw CliExc(CliExc::CONNECTION_ACCEPT_FAILED, "unavalible file descriptors to open connection");
     }
 	
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
         close(fd);
-		//its here also!
-        throw IRCException("ERR_INVCLIENT", "failed to initialize client [fcntl()]");
+        throw CliExc(CliExc::CONNECTION_ACCEPT_FAILED, strerror(errno));
     }
 
 	return (fd);
@@ -252,14 +254,7 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 		while (alive && !client->isClosing() && client->nextLine(line)) {
 			if (line.empty())
 				continue;
-			try {
-				//CommandRegistry::exe(Parser::processInput(line), *this, *client);
-			}
-			catch(const IRCException &e) {
-				//Handle invalid IRC message.
-					//Build a reply of invalid input. Fill the client _buffOut with it.
-				//Continue processing subsequent complete lines.
-			}
+			//CommandRegistry::exe(Parser::processInput(line), *this, *client);
 		}
 	}
 	

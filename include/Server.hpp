@@ -1,60 +1,67 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include "Config.hpp"
-# include "IRCException.hpp"
-# include "Socket.hpp"
+# ifndef SERVER_NAME
+#  define SERVER_NAME "irc.42.com"
+# endif
 
-#	include <vector>
-#	include <map>
-#	include <cerrno>
-#	include <cstring>
-#	include <fstream>
-#	include <poll.h>
-#	include <fcntl.h>
-#	include <unistd.h>
-#	include <sys/socket.h>
-#	include <sys/types.h>
-#	include <arpa/inet.h>
-#	include <netinet/in.h>
-#	include "Channel.hpp"
+# include "Config.hpp"
+# include "Socket.hpp"
+# include "Channel.hpp"
+# include "ServerException.hpp"
+# include "ClientException.hpp"
+
+# include <vector>
+# include <map>
+# include <cerrno>
+# include <cstring>
+# include <fstream>
+# include <poll.h>
+# include <fcntl.h>
+# include <unistd.h>
+# include <sys/socket.h>
+# include <sys/types.h>
+# include <arpa/inet.h>
+# include <netinet/in.h>
 
 class Server {
+
 	private:
 
-		const int 				_port;
-		const std::string		_password;
+		const int 							_port;
+		const std::string					_password;
 
-		std::map<int , Socket*>	_clientArr;
-		struct pollfd			_pollFD;
-		int						_spareFD;
-		std::map<std::string, Channel *> _channels;
-								Server(const Server &copy);
-								Server& operator=(const Server &copy);
+		std::map<int , Socket*>				_clientArr;
+		struct pollfd						_pollFD;
+		int									_spareFD;
+		std::map<std::string, Channel *>	_channels;
 
-		int 					initSocket() const;
-		int 					initAddr(const int serverFD) const;
-		void					initFDS(const int serverFD);
+											Server(const Server &copy);
+											Server& operator=(const Server &copy);
 
-		void 					addNewClient();
-		int						acceptClient(struct sockaddr_in &address);
-		void 					manageClient(std::map<int, Socket*>::iterator client_it, short revents);
-		void 					deleteClient(std::map<int, Socket*>::iterator client_it);
+		int 								initSocket() const;
+		int 								initAddr(const int serverFD) const;
+		void								initFDS(const int serverFD);
+
+		void 								addNewClient();
+		int									acceptClient(struct sockaddr_in &address);
+		void 								manageClient(std::map<int, Socket*>::iterator client_it, short revents);
+		void 								deleteClient(std::map<int, Socket*>::iterator client_it);
 		
-		void 					reapClosing();
+		void 								reapClosing();
 	
 	public:
 	
-								Server(Config init);
-								~Server();
+											Server(Config init);
+											~Server();
 
-		void 					run();
-		bool 					matchPassword(const std::string &pass) const throw();
-		Channel 				*getChannel(const std::string &name) const;
-		Channel 				*getOrCreate(const std::string &name);
-		void 					removeChannel(const std::string &name);
-		Socket 					*findClientByNick(const std::string &nick) const;
-		void 					removeClientFromChannels(Socket *client);
+		void 								run();
+		bool 								matchPassword(const std::string &pass) const throw();
+		Channel 							*getChannel(const std::string &name) const;
+		Channel 							*getOrCreate(const std::string &name);
+		void 								removeChannel(const std::string &name);
+		Socket 								*findClientByNick(const std::string &nick) const;
+		void 								removeClientFromChannels(Socket *client);
 };
 
 #endif
