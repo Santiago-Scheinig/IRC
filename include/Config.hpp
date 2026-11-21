@@ -13,13 +13,14 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
+# include "ServerException.hpp"
+
 # include <string>
 # include <cctype>
 # include <cstring>
 # include <csignal>
-# include <iostream>
 # include <sstream>
-# include "IRCException.hpp"
+# include <iostream>
 
 extern volatile	sig_atomic_t	g_shutdown;
 
