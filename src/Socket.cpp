@@ -4,6 +4,62 @@
 #include <sys/socket.h>
 #include <string>
 
+static const Socket::prefix prefixArr[] = {
+    // CONNECTION REGISTRATION
+    {Socket::RPL_WELCOME,            ":Welcome to the Internet Relay Network "},
+    {Socket::RPL_YOURHOST,           ":Your host is "},
+    {Socket::RPL_CREATED,            ":This server was created "},
+    {Socket::RPL_MYINFO,             ""},
+
+    // SERVER INFORMATION
+    {Socket::RPL_LUSERCLIENT,        ":There are "},
+    {Socket::RPL_LUSEROP,            ""},
+    {Socket::RPL_LUSERUNKNOWN,       ""},
+    {Socket::RPL_LUSERCHANNELS,      ""},
+    {Socket::RPL_LUSERME,            ":I have "},
+
+    // CHANNEL INFORMATION
+    {Socket::RPL_NOTOPIC,            ":No topic is set"},
+    {Socket::RPL_TOPIC,              ""},
+    {Socket::RPL_NAMREPLY,           ""},
+    {Socket::RPL_ENDOFNAMES,         ":End of /NAMES list"},
+
+    // GENERAL ERRORS
+    {Socket::ERR_NOSUCHNICK,         ":No such nick/channel"},
+    {Socket::ERR_NOSUCHSERVER,       ":No such server"},
+    {Socket::ERR_NOSUCHCHANNEL,      ":No such channel"},
+    {Socket::ERR_CANNOTSENDTOCHAN,   ":Cannot send to channel"},
+    {Socket::ERR_TOOMANYCHANNELS,    ":You have joined too many channels"},
+
+    {Socket::ERR_NOORIGIN,           ":No origin specified"},
+    {Socket::ERR_NORECIPIENT,        ":No recipient given"},
+    {Socket::ERR_NOTEXTTOSEND,       ":No text to send"},
+    {Socket::ERR_UNKNOWNCOMMAND,     ":Unknown command"},
+
+    // NICKNAME ERRORS
+    {Socket::ERR_NONICKNAMEGIVEN,    ":No nickname given"},
+    {Socket::ERR_ERRONEUSNICKNAME,   ":Erroneous nickname"},
+    {Socket::ERR_NICKNAMEINUSE,      ":Nickname is already in use"},
+
+    // CHANNEL ERRORS
+    {Socket::ERR_USERNOTINCHANNEL,   ":They aren't on that channel"},
+    {Socket::ERR_NOTONCHANNEL,       ":You're not on that channel"},
+    {Socket::ERR_USERONCHANNEL,      ":is already on channel"},
+
+    {Socket::ERR_CHANNELISFULL,      ":Cannot join channel (+l)"},
+    {Socket::ERR_INVITEONLYCHAN,     ":Cannot join channel (+i)"},
+    {Socket::ERR_BANNEDFROMCHAN,     ":Cannot join channel (+b)"},
+    {Socket::ERR_BADCHANNELKEY,      ":Cannot join channel (+k)"},
+    {Socket::ERR_CHANOPRIVSNEEDED,   ":You're not channel operator"},
+
+    // REGISTRATION ERRORS
+    {Socket::ERR_NOTREGISTERED,      ":You have not registered"},
+    {Socket::ERR_NEEDMOREPARAMS,     ":Not enough parameters"},
+    {Socket::ERR_ALREADYREGISTERED,  ":You may not reregister"},
+    {Socket::ERR_PASSWDMISMATCH,     ":Password incorrect"},
+
+    {Socket::END, ": invalid reply code"}
+};
 
 /* ------------------------------------------------------------------------ */
 
@@ -87,6 +143,30 @@ bool	Socket::dataSend() {
 	if (_buffOut.empty())
 		_pollFD.events &= ~POLLOUT;
 	return (true);
+}
+
+
+std::string	Socket::newReply(const replyco code, const std::string& target, const std::vector<std::string>& args) {
+
+	std::vector<std::string>::const_iterator	it;
+	std::ostringstream							reply;
+
+	reply << ":" << SERVER_NAME << " "
+    	  << std::setw(3) << std::setfill('0')
+      	  << static_cast<int>(code) << " "
+      	  << target;
+    
+	for (it = args.begin(); it != args.end(); ++it)
+    	reply << " " << *it;
+
+    int i = 0;
+    while (prefixArr[i].code != END) {
+    	if (prefixArr[i].str)
+    		break;
+    }
+
+	reply << " :" << prefixArr[i].str << "\r\n";
+	return (reply.str());
 }
 
 /* ------------------------------------------------------------------------ */
