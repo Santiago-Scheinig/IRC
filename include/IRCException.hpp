@@ -1,23 +1,27 @@
 #ifndef IRCEXCEPTION_HPP
 # define IRCEXCEPTION_HPP
 
-# define ERROR "\033[31m[ERROR]\t"
-# define INFO "\033[33m[INFO]\t"
+# define ERROR "\033[31m[ERROR] "
+# define INFO "\033[33m[INFO] "
 # define CLEAN "\033[0m"
-# define END "\033[0m\n"
+# define EOM "\033[0m\n"
 
-# include <exception>
+# include <ctime>
 # include <string>
+# include <sstream>
+# include <exception>
 
-class IRCException : public std::exception
+class IRCException : virtual public std::exception
 {
 
-	protected:
+	public:
 
 		struct 				prefix {
-			const errco 	code;
-			const char 		*msg; 
-		}    	
+			const int 		code;
+			const char 		*str; 
+		};
+
+	protected:
     	
     	std::string 		_message;
 
@@ -26,12 +30,9 @@ class IRCException : public std::exception
     	
     						IRCException(const std::string& message);
 
-    	virtual				~IRCException() const throw();
+    	virtual				~IRCException() throw();
 
     	const char*			what() const throw();
-
-    	const std::string 	format() = 0;    	
-    	static void			initializeErrco() = 0;
 };
 
 #endif

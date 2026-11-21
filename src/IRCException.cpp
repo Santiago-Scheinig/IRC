@@ -13,17 +13,18 @@
 #include "IRCException.hpp"
 
 			IRCException::IRCException(const std::string& message) {
-    std::ostringstream	timestamp;
+    std::time_t currentTime = std::time(NULL);
+    std::tm* localTime = std::localtime(&currentTime);
 
-	auto 				now = std::chrono::system_clock::now();
-	std::time_t 		currentTime = std::chrono::system_clock::to_time_t(now);
+    char buffer[20];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
 
-    timestamp << std::put_time(std::localtime(&currentTime), "%Y-%m-%d %H:%M:%S");
-    _message = "[" + timestamp.str() + "] " + message;
+    _message = "[" + std::string(buffer) + "]" + message;
 }
 
-			IRCException::~IRCException() {}
+			IRCException::~IRCException() throw() {}
 
 const char	*IRCException::what() const throw() {
-	return (_msg.c_str());
+	return (_message.c_str());
 }
+

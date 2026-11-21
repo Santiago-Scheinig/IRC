@@ -2,13 +2,14 @@
 # define CLIENTEXCEPTION_HPP
 
 # include "IRCException.hpp"
+
 # include <string>
 # include <map>
 
-class ClientException : public IRCException {
+class ClientException : virtual public IRCException {
 
 	public:
-    	
+		
 	    enum 				errco {
 
 			/* CONNECTION MANAGEMENT */
@@ -55,7 +56,9 @@ class ClientException : public IRCException {
     		EMPTY_MESSAGE,
     		MESSAGE_TOO_LONG,
     		INVALID_MESSAGE_TARGET,
-    		MESSAGE_DELIVERY_FAILED		
+    		MESSAGE_DELIVERY_FAILED,
+
+    		END		
 		};
 
 	private:
@@ -70,7 +73,9 @@ class ClientException : public IRCException {
     						ClientException(errco code);
     						ClientException(errco code, const std::string& message);
 
-		virtual				~ClientException() const throw();
+		virtual				~ClientException() throw();
 };
+
+typedef ClientException	CliExc;
 
 #endif

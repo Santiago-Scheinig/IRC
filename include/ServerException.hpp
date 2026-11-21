@@ -2,10 +2,11 @@
 # define SERVEREXCEPTION_HPP
 
 # include "IRCException.hpp"
+
 # include <string>
 # include <map>
 
-class ServerException : public IRCException {
+class ServerException : virtual public IRCException {
 
 	public:
 
@@ -37,8 +38,9 @@ class ServerException : public IRCException {
     		/* INTERNAL SERVER STATE */
 
     		INVALID_INTERNAL_STATE,
-    		INTERNAL_OPERATION_FAILED
-    	
+    		INTERNAL_OPERATION_FAILED,
+
+    		END
 		};
 
 	private:
@@ -53,8 +55,9 @@ class ServerException : public IRCException {
 							ServerException(errco code);
 		    				ServerException(errco code, const std::string& message);
 			    			
-		virtual    			~ServerException() const throw();
+		virtual    			~ServerException() throw();
 };
 
+typedef ServerException	SrvExc;
 
 #endif
