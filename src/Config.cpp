@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
+/*   By: eduaserr < eduaserr@student.42malaga.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:30 by sscheini          #+#    #+#             */
-/*   Updated: 2026/11/13 18:10:14 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/18 21:11:53 by eduaserr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
