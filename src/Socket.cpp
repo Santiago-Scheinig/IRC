@@ -71,7 +71,10 @@ static const Socket::prefix prefixArr[] = {
  * 
  */
 		Socket::Socket(int fd, const std::string &ip)	
-			:	_ip(ip), _hasPass(false), _registered(false), _closing(false) {
+			:	_ip(ip),
+				_hasPass(false),
+				_registered(false),
+				_closing(false) {
 	_pollFD.fd = fd;
 	_pollFD.events = POLLIN;
 	_pollFD.revents = 0;
@@ -94,6 +97,7 @@ static const Socket::prefix prefixArr[] = {
  */
 bool	Socket::dataRead() {
 	char	buf[512];
+
 	ssize_t n = recv(_pollFD.fd, buf, sizeof(buf), 0);
 
 	if (n <= 0) {
@@ -107,13 +111,16 @@ bool	Socket::dataRead() {
  * 
  */
 bool	Socket::nextLine(std::string &line) {
-	std::string::size_type pos = _buffIn.find('\n');
+	std::string::size_type	pos = _buffIn.find('\n');
 
 	if (pos == std::string::npos) {
-		if (_buffIn.size() > 512)	//No terminator and already too long
-			_buffIn.clear();		// or queue ERR_INPUTTOOLONG (417)
+		if (_buffIn.size() > 512) {
+			_buffIn.clear();
+			queueOutput(newReply(ERR_INPUTTOOLONG, _nickname, {"input line was too long"}));
+		}
 		return (false);
 	}
+
 	line = _buffIn.substr(0, pos);
 	_buffIn.erase(0, pos + 1);
 	if (!line.empty() && line[line.size() - 1] == '\r')
@@ -147,7 +154,6 @@ bool	Socket::dataSend() {
 
 
 std::string	Socket::newReply(const replyco code, const std::string& target, const std::vector<std::string>& args) {
-
 	std::vector<std::string>::const_iterator	it;
 	std::ostringstream							reply;
 

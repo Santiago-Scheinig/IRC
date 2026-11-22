@@ -11,11 +11,12 @@
 # include "ServerException.hpp"
 # include "ClientException.hpp"
 
-# include <vector>
 # include <map>
+# include <vector>
 # include <cerrno>
 # include <cstring>
 # include <fstream>
+
 # include <poll.h>
 # include <fcntl.h>
 # include <unistd.h>
@@ -28,13 +29,14 @@ class Server {
 
 	private:
 
+		struct pollfd						_pollFD;
+		int									_spareFD;
+
 		const int 							_port;
 		const std::string					_password;
 
 		std::map<int , Socket*>				_clientArr;
-		struct pollfd						_pollFD;
-		int									_spareFD;
-		std::map<std::string, Channel *>	_channels;
+		std::map<std::string, Channel *>	_channelArr;
 
 											Server(const Server &copy);
 											Server& operator=(const Server &copy);
@@ -56,6 +58,7 @@ class Server {
 											~Server();
 
 		void 								run();
+
 		bool 								matchPassword(const std::string &pass) const throw();
 		Channel 							*getChannel(const std::string &name) const;
 		Channel 							*getOrCreate(const std::string &name);

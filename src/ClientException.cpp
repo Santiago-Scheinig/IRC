@@ -31,7 +31,7 @@ static const CliExc::prefix	prefixArr[] = {
 	{CliExc::MESSAGE_DELIVERY_FAILED, "Failed to deliver client message: "},
 	{CliExc::END, "Invalid client errco: "}
 };
-
+ 
 					CliExc::ClientException(errco code) 
 						:	IRCException(format(code)),
 							_code(code) {}
@@ -44,6 +44,7 @@ static const CliExc::prefix	prefixArr[] = {
 
 const std::string	CliExc::format(errco code) {
 	std::string msg;
+	
 	int 		i = 0;
 
 	while (prefixArr[i].code != END) {
@@ -59,6 +60,7 @@ const std::string	CliExc::format(errco code) {
 
 const std::string	CliExc::format(errco code, const std::string& sufix) {
 	std::string msg;
+
 	int 		i = 0;
 
 	while (prefixArr[i].code != END) {

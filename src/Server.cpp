@@ -10,7 +10,9 @@
  * 
  */
 		Server::Server(Config init)
-					:	_port(init.getPort()), _password(init.getPassword()), _spareFD(-1) {
+					:	_port(init.getPort()),
+						_password(init.getPassword()),
+						_spareFD(-1) {
 	initFDS(initAddr(initSocket()));
 }
 
@@ -18,13 +20,12 @@
  * 
  */
 int		Server::initSocket() const {
-
 	int serverFD = socket(AF_INET, SOCK_STREAM, 0);
+	int	opt = 1;
 
 	if (serverFD < 0)
 		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	
-	int	opt = 1;
 	if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 		close(serverFD);
 		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
@@ -42,7 +43,6 @@ int		Server::initSocket() const {
  * 
  */
 int		Server::initAddr(const int serverFD) const {
-	
 	struct sockaddr_in	address;
 	
 	std::memset(&address, 0, sizeof(address));
@@ -67,7 +67,6 @@ int		Server::initAddr(const int serverFD) const {
  * 
  */
 void	Server::initFDS(const int serverFD) {
-
 	_pollFD.fd = serverFD;
 	_pollFD.events = POLLIN;
 	_pollFD.revents = 0;
@@ -99,7 +98,6 @@ void	Server::initFDS(const int serverFD) {
  * 
  */
 void	Server::run() {
-
 	while (!g_shutdown) {
 		std::vector<struct pollfd> pollArr;
 
@@ -118,13 +116,13 @@ void	Server::run() {
 		
 		if (pollArr[0].revents & (POLLERR | POLLNVAL))
 			throw SrvExc(SrvExc::INVALID_INTERNAL_STATE, strerror(errno));
+
 		try {
 			if (pollArr[0].revents & POLLIN)
 				addNewClient();
 		}
 		catch (const ClientException &e) {
 			std::cout << e.what();
-			//Handle failed client acceptance.
 		}	
 		
 		for (size_t i = 1; i < pollArr.size(); ++i) {
@@ -144,10 +142,8 @@ void	Server::run() {
 				manageClient(client_it, pollArr[i].revents);
 			}
 			catch (const ClientException &e) {
-				//Handle client specific errors.
-				client_it = _clientArr.find(pollArr[i].fd);
-				if (client_it != _clientArr.end())
-					deleteClient(client_it);
+				std::cout << e.what();
+				deleteClient(client_it);
 			}
 		}
 		reapClosing();
@@ -187,19 +183,19 @@ void	Server::reapClosing() {
 void	Server::addNewClient() {
 	struct sockaddr_in	address;
 
-	int fd = acceptClient(address);
+	int 				fd = acceptClient(address);
+	Socket				*client = NULL;
 
-	Socket *client = NULL;
     try {
         client = new Socket(fd, std::string(inet_ntoa(address.sin_addr)));
         if (!_clientArr.insert(std::make_pair(fd, client)).second)
             throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
         client = NULL;
     }
-    catch (...) {
+    catch (const std::exception& e) {
         delete client;
         close(fd);
-        throw; //Throw a formatted message using the errno.
+        throw SrvExc(SrvExc::INTERNAL_OPERATION_FAILED, e.what());
     }
 }
 
@@ -207,16 +203,16 @@ void	Server::addNewClient() {
  * 
  */
 int		Server::acceptClient(struct sockaddr_in &address) {
-    socklen_t addrlen = sizeof(address);
-
-    int fd = accept(_pollFD.fd, (struct sockaddr *)&address, &addrlen);
-    if (fd < 0) {
+    socklen_t 	addrlen = sizeof(address);
+    int 		fd = accept(_pollFD.fd, (struct sockaddr *)&address, &addrlen);
+    
+	if (fd < 0) {
         if (errno == EMFILE || errno == ENFILE) {
             close(_spareFD);
             _spareFD = -1;
             int tmp = accept(_pollFD.fd, NULL, NULL);
             if (tmp >= 0) {
-                const char msg[] = "ERROR: server full\r\n"; //Needs reply formatting.
+				const char msg[] = "ERROR :Server is full (maximum file descriptors reached)\r\n";
                 send(tmp, msg, sizeof(msg) - 1, MSG_NOSIGNAL);
                 close(tmp);
             }
@@ -239,32 +235,26 @@ int		Server::acceptClient(struct sockaddr_in &address) {
 void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short revents) {
 	std::string	line;
 
-	Socket	*client = client_it->second;
-	bool	alive = true;
+	Socket		*client = client_it->second;
+	bool		alive = true;
 	
-	//Invalid descriptor: remove immediatly.
-	if (revents & POLLNVAL) {
-		deleteClient(client_it);
-		return;
-	}
+	if (revents & POLLNVAL)
+		throw CliExc(CliExc::INVALID_CLIENT_STATE);
 	
-	//Read avalible data. Process every complete line in the receive buffer.
 	if (revents & (POLLIN | POLLHUP | POLLERR) && !client->isClosing()) {
 		alive = client->dataRead();
 		while (alive && !client->isClosing() && client->nextLine(line)) {
 			if (line.empty())
 				continue;
-			//CommandRegistry::exe(Parser::processInput(line), *this, *client);
+			CommandRegistry::exe(Parser::processInput(line), *this, *client);
 		}
 	}
 	
-	//Flush pending output.
 	if (alive && (revents & POLLOUT))
 		alive = client->dataSend();
 	
-	//Remove dead or disconnected clients.
 	if (!alive || (revents & (POLLHUP | POLLERR)))
-		deleteClient(client_it);
+		throw CliExc(CliExc::CONNECTION_LOST);
 }
 
 /**

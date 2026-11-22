@@ -15,7 +15,7 @@ static const SrvExc::prefix 	prefixArr[] = {
 	{SrvExc::INTERNAL_OPERATION_FAILED, "Server internal operation failed: "},
 	{SrvExc::END, "Invalid server errco: "}
 };
-
+ 
 					SrvExc::ServerException(errco code)
 						:	IRCException(format(code)),
 							_code(code) {}
@@ -28,6 +28,7 @@ static const SrvExc::prefix 	prefixArr[] = {
 
 const std::string	SrvExc::format(errco code) {
 	std::string msg;
+	
 	int 		i = 0;
 
 	while (prefixArr[i].code != END) {
@@ -43,6 +44,7 @@ const std::string	SrvExc::format(errco code) {
  
 const std::string	SrvExc::format(errco code, const std::string& sufix) {
 	std::string msg;
+	
 	int 		i = 0;
 
 	while (prefixArr[i].code != END) {

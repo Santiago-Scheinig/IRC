@@ -8,7 +8,7 @@
 
 class ClientException : virtual public IRCException {
 
-	public:
+	public: 
 		
 	    enum 				errco {
 

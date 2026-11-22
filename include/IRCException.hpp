@@ -8,11 +8,10 @@
 
 # include <ctime>
 # include <string>
-# include <sstream>
+# include <sstream> 
 # include <exception>
 
-class IRCException : virtual public std::exception
-{
+class IRCException : virtual public std::exception {
 
 	public:
 
@@ -25,14 +24,14 @@ class IRCException : virtual public std::exception
     	
     	std::string 		_message;
 
-
 	public:
     	
     						IRCException(const std::string& message);
-
     	virtual				~IRCException() throw();
 
     	const char*			what() const throw();
 };
+
+typedef IRCException IRCE;
 
 #endif

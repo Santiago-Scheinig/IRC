@@ -12,19 +12,19 @@
 
 #include "IRCException.hpp"
 
-			IRCException::IRCException(const std::string& message) {
+			IRCE::IRCException(const std::string& message) {
+    char        buffer[20];
+
     std::time_t currentTime = std::time(NULL);
-    std::tm* localTime = std::localtime(&currentTime);
+    std::tm*    localTime = std::localtime(&currentTime);
 
-    char buffer[20];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
-
     _message = "[" + std::string(buffer) + "]" + message;
 }
 
-			IRCException::~IRCException() throw() {}
+			IRCE::~IRCException() throw() {}
 
-const char	*IRCException::what() const throw() {
+const char	*IRCE::what() const throw() {
 	return (_message.c_str());
 }
 

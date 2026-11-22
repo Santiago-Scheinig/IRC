@@ -114,12 +114,12 @@ class Socket {
 		void				setPass(bool ans);
 		void				setClosing();
 		
+		const int			&getFD() const throw();
+		const struct pollfd	&getPollFD() const throw();
+		const std::string	&getIP() const throw();
 		const std::string	&getNickname() const throw();
 		const std::string	&getUsername() const throw();
 		const std::string	&getRealname() const throw();
-		const struct pollfd	&getPollFD() const throw();
-		const int			&getFD() const throw();
-		const std::string	&getIP() const throw();
 		
 		bool 				hasPendingOutput() const throw();
 		bool				hasPass() const throw();
