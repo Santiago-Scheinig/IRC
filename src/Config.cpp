@@ -19,6 +19,7 @@
                     Config::Config(int argc, char **argv) {
     if (argc != 3)
         throw SrvExc(SrvExc::CONFIG_INVALID, "./irc <port> <password>");
+  
     parsePort(argv[1]);
     parsePassword(argv[2]);
     initSignalHandler();
@@ -39,12 +40,14 @@ Config              &Config::operator=(const Config &other){
                     Config::~Config() throw() {}
 
 void                Config::parsePort(const std::string &s) {
-    std::size_t    size = s.size();
+    std::size_t         size = s.size();
 
     if (s.empty())
         throw SrvExc(SrvExc::CONFIG_INVALID, "port is empty");
+    
     if (size > 5)
         throw SrvExc(SrvExc::CONFIG_INVALID, "port values: [1 - 65535]");
+    
     for (std::size_t i = 0; i < size; ++i)
         if (!std::isdigit(static_cast<unsigned char>(s[i])))
             throw SrvExc(SrvExc::CONFIG_INVALID, "non numeric character found");
@@ -56,15 +59,17 @@ void                Config::parsePort(const std::string &s) {
 }
 
 void                Config::parsePassword(const std::string &s) {
-    std::size_t    size = s.size();
+    std::size_t         size = s.size();
     
     if (s.empty())
         throw SrvExc(SrvExc::CONFIG_INVALID, "password cannot be empty");
+    
     for (std::size_t i = 0; i < size; ++i) {
         if (!std::isprint(static_cast<unsigned char>(s[i])))
             throw SrvExc(SrvExc::CONFIG_INVALID, "password cannot have non printable characters");
     }
-	_pass = s;
+	
+    _pass = s;
 }
 
 void			    Config::signalHandler(int signum) {
@@ -79,13 +84,17 @@ void                Config::initSignalHandler() {
 	std::memset(&sa_pipe, 0, sizeof(sa_pipe));
 	sa_pipe.sa_handler = SIG_IGN;
 	sigemptyset(&sa_pipe.sa_mask);
-	if (sigaction(SIGPIPE, &sa_pipe, NULL) == 1) {
+	
+    if (sigaction(SIGPIPE, &sa_pipe, NULL) == 1) {
 		throw SrvExc(SrvExc::CONFIG_LOAD_FAILED, strerror(errno));
 	}
-	std::memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = signalHandler;
+	
+    std::memset(&sa, 0, sizeof(sa));
+	
+    sa.sa_handler = signalHandler;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGINT, &sa, NULL) == 1) {
+	
+    if (sigaction(SIGINT, &sa, NULL) == 1) {
 		throw SrvExc(SrvExc::CONFIG_LOAD_FAILED, strerror(errno));
 	}
 }

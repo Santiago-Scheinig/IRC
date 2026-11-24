@@ -16,7 +16,7 @@ class ServerException : virtual public IRCException {
 
     		CONFIG_LOAD_FAILED,
     		CONFIG_INVALID,
-		
+		 
 
 		    /* SOCKET MANAGEMENT */
 

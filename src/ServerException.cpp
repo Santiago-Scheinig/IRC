@@ -38,6 +38,7 @@ const std::string	SrvExc::format(errco code) {
 		}
 		i++;
 	}
+
 	msg = prefixArr[i].str;
 	return (ERROR + msg + EOM);
 }
@@ -54,6 +55,7 @@ const std::string	SrvExc::format(errco code, const std::string& sufix) {
 		}
 		i++;
 	}
+
 	msg = prefixArr[i].str;
 	return (ERROR + msg + sufix + EOM);
 }

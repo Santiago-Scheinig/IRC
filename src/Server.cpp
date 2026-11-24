@@ -1,3 +1,4 @@
+#include "CommandRegistry.hpp"
 #include "Server.hpp"
 
 /* ------------------------------------------------------------------------ */
@@ -10,11 +11,13 @@
  * 
  */
 		Server::Server(Config init)
-					:	_port(init.getPort()),
-						_password(init.getPassword()),
-						_spareFD(-1) {
+    		:	_spareFD(-1),
+      			_port(init.getPort()),
+      			_password(init.getPassword()) {
+    
 	initFDS(initAddr(initSocket()));
 }
+
 
 /**
  * 
@@ -27,11 +30,13 @@ int		Server::initSocket() const {
 		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	
 	if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		
 		close(serverFD);
 		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	}
 	
 	if (fcntl(serverFD, F_SETFL, O_NONBLOCK) < 0) {
+		
 		close(serverFD);
 		throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
 	}
@@ -51,11 +56,13 @@ int		Server::initAddr(const int serverFD) const {
 	address.sin_port = htons(_port);
 	
 	if (bind(serverFD, (struct sockaddr *) &address, sizeof(address)) < 0) {
+		
 		close(serverFD);
 		throw SrvExc(SrvExc::SOCKET_BIND_FAILED, strerror(errno));
 	}
 	
 	if (listen(serverFD, SOMAXCONN) < 0) {
+		
 		close(serverFD);
 		throw SrvExc(SrvExc::SOCKET_BIND_FAILED, strerror(errno));
 	}
@@ -67,6 +74,7 @@ int		Server::initAddr(const int serverFD) const {
  * 
  */
 void	Server::initFDS(const int serverFD) {
+	
 	_pollFD.fd = serverFD;
 	_pollFD.events = POLLIN;
 	_pollFD.revents = 0;
@@ -82,10 +90,14 @@ void	Server::initFDS(const int serverFD) {
  * 
  */
 		Server::~Server() {
-	while (!_clientArr.empty())
-		deleteClient(_clientArr.begin());
-	close(_pollFD.fd);
-	close(_spareFD);
+    while (!_clientArr.empty())
+        deleteClient(_clientArr.begin());
+
+    while (!_channelArr.empty())
+        removeChannel(_channelArr.begin()->first);
+
+    close(_pollFD.fd);
+    close(_spareFD);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -98,19 +110,25 @@ void	Server::initFDS(const int serverFD) {
  * 
  */
 void	Server::run() {
+	
 	while (!g_shutdown) {
 		std::vector<struct pollfd> pollArr;
 
 		pollArr.push_back(_pollFD);
+		
 		for (std::map<int, Socket *>::iterator client_it = _clientArr.begin(); client_it != _clientArr.end(); ++client_it)
 			pollArr.push_back(client_it->second->getPollFD());
 		
 		if (poll(&pollArr[0], pollArr.size(), -1) < 0) {
+			
 			if (errno == EINTR) {
+				
 				if (g_shutdown)
 					break;
+				
 				continue;
 			}
+			
 			throw SrvExc(SrvExc::POLL_INITIALIZATION_FAILED, strerror(errno));
 		}
 		
@@ -118,10 +136,12 @@ void	Server::run() {
 			throw SrvExc(SrvExc::INVALID_INTERNAL_STATE, strerror(errno));
 
 		try {
+			
 			if (pollArr[0].revents & POLLIN)
 				addNewClient();
 		}
 		catch (const ClientException &e) {
+			
 			std::cout << e.what();
 		}	
 		
@@ -142,10 +162,12 @@ void	Server::run() {
 				manageClient(client_it, pollArr[i].revents);
 			}
 			catch (const ClientException &e) {
+			
 				std::cout << e.what();
 				deleteClient(client_it);
 			}
 		}
+
 		reapClosing();
 	}	
 }
@@ -165,9 +187,9 @@ void	Server::reapClosing() {
 	
 	for (Socket_it pos = _clientArr.begin(); pos != _clientArr.end();) {
 		Socket_it current_pos = pos++;
-		if (current_pos->second->isClosing() && !current_pos->second->hasPendingOutput()) {
+		
+		if (current_pos->second->isClosing() && !current_pos->second->hasPendingOutput())
 			deleteClient(current_pos);
-		}
 	}
 }
 
@@ -187,13 +209,17 @@ void	Server::addNewClient() {
 	Socket				*client = NULL;
 
     try {
+
         client = new Socket(fd, std::string(inet_ntoa(address.sin_addr)));
-        if (!_clientArr.insert(std::make_pair(fd, client)).second)
+
+		if (!_clientArr.insert(std::make_pair(fd, client)).second)
             throw SrvExc(SrvExc::SOCKET_CREATION_FAILED, strerror(errno));
-        client = NULL;
+        
+		client = NULL;
     }
     catch (const std::exception& e) {
-        delete client;
+        
+		delete client;
         close(fd);
         throw SrvExc(SrvExc::INTERNAL_OPERATION_FAILED, e.what());
     }
@@ -207,22 +233,30 @@ int		Server::acceptClient(struct sockaddr_in &address) {
     int 		fd = accept(_pollFD.fd, (struct sockaddr *)&address, &addrlen);
     
 	if (fd < 0) {
+
         if (errno == EMFILE || errno == ENFILE) {
-            close(_spareFD);
+        
+			close(_spareFD);
             _spareFD = -1;
-            int tmp = accept(_pollFD.fd, NULL, NULL);
-            if (tmp >= 0) {
+        
+			int tmp = accept(_pollFD.fd, NULL, NULL);
+			
+			if (tmp >= 0) {
 				const char msg[] = "ERROR :Server is full (maximum file descriptors reached)\r\n";
-                send(tmp, msg, sizeof(msg) - 1, MSG_NOSIGNAL);
+
+				send(tmp, msg, sizeof(msg) - 1, MSG_NOSIGNAL);
                 close(tmp);
             }
+
             _spareFD = open("/dev/null", O_RDONLY);
         }
+
         throw CliExc(CliExc::CONNECTION_ACCEPT_FAILED, "unavalible file descriptors to open connection");
     }
 	
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-        close(fd);
+        
+		close(fd);
         throw CliExc(CliExc::CONNECTION_ACCEPT_FAILED, strerror(errno));
     }
 
@@ -242,10 +276,14 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 		throw CliExc(CliExc::INVALID_CLIENT_STATE);
 	
 	if (revents & (POLLIN | POLLHUP | POLLERR) && !client->isClosing()) {
+
 		alive = client->dataRead();
+
 		while (alive && !client->isClosing() && client->nextLine(line)) {
+
 			if (line.empty())
 				continue;
+
 			CommandRegistry::exe(Parser::processInput(line), *this, *client);
 		}
 	}
@@ -261,9 +299,82 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
  * 
  */
 void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
+	
 	close(client_it->first);
 	delete client_it->second;
 	_clientArr.erase(client_it);
+}
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------     CHANNEL MANAGMENT      ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+Channel	*Server::getChannel(const std::string &name) const {
+	std::map<std::string, Channel *>::const_iterator it =	_channelArr.find(name);
+	
+	if (it == _channelArr.end())
+		throw CliExc(CliExc::CHANNEL_NOT_FOUND);
+
+	return (it->second);
+}
+
+Channel	*Server::getOrCreate(const std::string &name) {
+	std::map<std::string, Channel *>::iterator it = _channelArr.find(name);
+	
+	if (it != _channelArr.end())
+		return (it->second);
+	
+	Channel *channel = new Channel(name);
+	
+	_channelArr.insert(std::make_pair(name, channel));
+	return (channel);
+}
+
+void 	Server::removeChannel(const std::string &name) {
+	std::map<std::string, Channel *>::iterator it =	_channelArr.find(name);
+	
+	if (it == _channelArr.end())
+		throw CliExc(CliExc::CHANNEL_NOT_FOUND);
+	
+	delete it->second;
+	_channelArr.erase(it);
+}
+
+Socket *Server::findClientByNick(const std::string &nick) const {
+   
+	for (std::map<int, Socket *>::const_iterator it = _clientArr.begin(); it != _clientArr.end(); ++it)
+        if (it->second->getNickname() == nick)
+            return (it->second);
+    return (NULL);
+}
+
+void	Server::removeClientFromChannels(Socket *client) {
+	std::string 								prefix = client->getNickname() + "!" + client->getUsername() + "@" + client->getIP();
+	std::string 								msg = ":" + prefix + " QUIT :Client Quit\r\n";
+	std::map<std::string, Channel *>::iterator	it = _channelArr.begin();
+	
+	while (it != _channelArr.end()) {
+		
+		Channel *channel = it->second;
+		
+		if (!channel->hasMember(client)) {
+			++it;
+			continue;
+		}
+		
+		channel->removeMember(client);
+		channel->broadcast(msg, NULL);//Which message?
+		
+		if (channel->isEmpty()) {
+			++it;
+			continue;
+		}
+		
+		_channelArr.erase(it++);
+		delete channel;
+	}
 }
 
 /* ------------------------------------------------------------------------ */

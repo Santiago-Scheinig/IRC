@@ -33,7 +33,7 @@ class Socket {
 
     		RPL_LUSERCLIENT         = 251,
     		RPL_LUSEROP             = 252,
-    		RPL_LUSERUNKNOWN        = 253,
+    		RPL_LUSERUNKNOWN        = 253, 
     		RPL_LUSERCHANNELS       = 254,
     		RPL_LUSERME             = 255,
 
@@ -53,8 +53,10 @@ class Socket {
     		ERR_TOOMANYCHANNELS     = 405,
 
     		ERR_NOORIGIN            = 409,
+			ERR_INVALIDCAP			= 410,
     		ERR_NORECIPIENT         = 411,
     		ERR_NOTEXTTOSEND        = 412,
+			ERR_INPUTTOOLONG		= 417,
     		ERR_UNKNOWNCOMMAND      = 421,
 
     		/* NICKNAME ERRORS */
@@ -80,7 +82,7 @@ class Socket {
     		ERR_NOTREGISTERED       = 451,
     		ERR_NEEDMOREPARAMS      = 461,
     		ERR_ALREADYREGISTERED   = 462,
-    		ERR_PASSWDMISMATCH      = 464,
+    		ERR_PASSMISMATCH      = 464,
 
     		END = 000
 		};
@@ -126,7 +128,7 @@ class Socket {
 		bool				isRegistered() const throw();
 		bool				isClosing() const throw();
 
-		static std::string 	newReply(replyco code, const std::string& target, const std::vector<std::string>& args);
+		std::string		 	newReply(replyco code, const std::string& detail);
 };
 
 #endif

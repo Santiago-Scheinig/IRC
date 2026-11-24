@@ -17,7 +17,7 @@ class IRCException : virtual public std::exception {
 
 		struct 				prefix {
 			const int 		code;
-			const char 		*str; 
+			const char 		*str;  
 		};
 
 	protected:

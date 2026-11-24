@@ -21,7 +21,7 @@
 # include <csignal>
 # include <sstream>
 # include <iostream>
-
+ 
 extern volatile	sig_atomic_t	g_shutdown;
 
 class Config {
