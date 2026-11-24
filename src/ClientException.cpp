@@ -54,6 +54,7 @@ const std::string	CliExc::format(errco code) {
 		}
 		i++;
 	}
+
 	msg = prefixArr[i].str;
 	return (INFO + msg + EOM);
 }
@@ -70,6 +71,7 @@ const std::string	CliExc::format(errco code, const std::string& sufix) {
 		}
 		i++;
 	}
+	
 	msg = prefixArr[i].str;
 	return (INFO + msg + sufix + EOM);
 }
