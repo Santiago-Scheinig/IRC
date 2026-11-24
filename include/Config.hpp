@@ -3,43 +3,48 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
+/*   By: eduaserr < eduaserr@student.42malaga.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/16 18:23:47 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 19:22:49 by sscheini         ###   ########.fr       */
+/*   Updated: 2026/11/18 21:08:42 by eduaserr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
+# include "ServerException.hpp"
+
 # include <string>
 # include <cctype>
+# include <cstring>
 # include <csignal>
-# include <iostream>
 # include <sstream>
-# include "IRCException.hpp"
+# include <iostream>
+ 
+extern volatile	sig_atomic_t	g_shutdown;
 
 class Config {
     private:
         int                 _port;
-        std::string         _password;
+        std::string         _pass;
 
                             Config();
-                            Config(const Config &other);
         Config              &operator=(const Config &other);
-                            ~Config() throw();
 
         void                parsePort(const std::string &s);
         void                parsePassword(const std::string &s);
 
-        static void         initSignalHandler();
+        static void         signalHandler(int signum);
+		static void         initSignalHandler();
     
     public:
+                            Config(const Config &other);
                             Config(int argc, char **argv);
+                            ~Config() throw();
 
-        const std::string   &getPassword() throw() const;
-        int                 getPort() throw() const;
+        const std::string   &getPassword() const throw();
+        int                 getPort() const throw();
 
 };
 
