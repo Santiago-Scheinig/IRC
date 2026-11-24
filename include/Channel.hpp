@@ -10,7 +10,7 @@ class Channel {
 
 	private:
 
-		std::string 			    _name;
+		std::string 			    _name; 
 		std::map<Socket *, bool>    _members;
 		std::string 				_topic;
 		std::string 				_key;
@@ -38,6 +38,15 @@ class Channel {
 		bool 						isEmpty() const;
 		size_t 						memberCount() const;
 		void 						broadcast(const std::string &msg, Socket *exclude);
+
+        void 						removeOperator(Socket *client);
+        void 						setInviteOnly(bool enabled);
+        void 						setTopicRestricted(bool enabled);
+        void 						setKey(const std::string &key);
+        void 						setLimit(size_t limit);
+        bool 						isTopicRestricted() const;
+        bool 						isInvited(const Socket *client) const;
+        void 						invite(Socket *client);
 };
 
 #endif
