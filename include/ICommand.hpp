@@ -1,16 +1,16 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ICommand.hpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: sscheini <sscheini@student.42malaga.com    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/10/16 18:23:48 by sscheini          #+#    #+#             */
-/*   Updated: 2026/10/16 18:23:49 by sscheini         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef ICOMMAND_HPP
 # define ICOMMAND_HPP
 
+# include "Socket.hpp"
+# include "Server.hpp"
+# include "Message.hpp"
+
+class ICommand {
+
+    public:
+   
+        virtual void    execute(const Message &msg, Server &server, Socket &client) = 0;
+        virtual         ~ICommand() {}
+};
+ 
 #endif
