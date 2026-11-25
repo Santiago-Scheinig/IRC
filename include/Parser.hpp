@@ -4,12 +4,16 @@
 # include "ClientException.hpp"
 # include "Message.hpp"
 
-# include <cctype>
 # include <string>
 # include <vector>
 
-class Parser 
-{
+# include <cctype>
+
+/**
+ * 
+ */
+class Parser  {
+	
 	public:
 
 		static Message 		processInput(const std::string &line);

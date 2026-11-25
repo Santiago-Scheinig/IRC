@@ -7,10 +7,21 @@
 
 # include "Parser.hpp"
 
+# include <string>
 # include <sstream>
 # include <iomanip>
-# include <poll.h>
+# include <iostream>
 
+# include <cstdio>
+# include <cerrno>
+
+# include <poll.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+
+/**
+ * 
+ */
 class Socket {
 
 	public:
@@ -39,15 +50,17 @@ class Socket {
 
     		/* CHANNEL INFORMATION */
 
+			RPL_CHANNELMODEIS		= 324,
     		RPL_NOTOPIC             = 331,
     		RPL_TOPIC               = 332,
+			RPL_INVITING			= 341,
     		RPL_NAMREPLY            = 353,
     		RPL_ENDOFNAMES          = 366,
 
     		/* GENERAL ERRORS */
 
     		ERR_NOSUCHNICK          = 401,
-    		ERR_NOSUCHSERVER        = 402,
+    		ERR_NOSUCHSERVER        = 402, 
     		ERR_NOSUCHCHANNEL       = 403,
     		ERR_CANNOTSENDTOCHAN    = 404,
     		ERR_TOOMANYCHANNELS     = 405,
@@ -72,6 +85,7 @@ class Socket {
     		ERR_USERONCHANNEL       = 443,
 
     		ERR_CHANNELISFULL       = 471,
+			ERR_UNKNOWNMODE			= 472,
     		ERR_INVITEONLYCHAN      = 473,
     		ERR_BANNEDFROMCHAN      = 474,
     		ERR_BADCHANNELKEY       = 475,

@@ -6,6 +6,9 @@
 # include <string>
 # include <map>
 
+/**
+ * 
+ */
 class ClientException : virtual public IRCException {
 
 	public: 
@@ -73,6 +76,7 @@ class ClientException : virtual public IRCException {
     						ClientException(errco code);
     						ClientException(errco code, const std::string& message);
 
+		errco				getCode();
 		virtual				~ClientException() throw();
 };
 

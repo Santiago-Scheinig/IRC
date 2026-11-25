@@ -1,5 +1,8 @@
 #include "ServerException.hpp"
 
+/**
+ * 
+ */
 static const SrvExc::prefix 	prefixArr[] = {
 	{SrvExc::CONFIG_LOAD_FAILED, "Failed to load server configuration: "},
 	{SrvExc::CONFIG_INVALID, "Invalid server configuration: "},
@@ -16,16 +19,40 @@ static const SrvExc::prefix 	prefixArr[] = {
 	{SrvExc::END, "Invalid server errco: "}
 };
  
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------        CONSTRUCTORS        ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 					SrvExc::ServerException(errco code)
 						:	IRCException(format(code)),
 							_code(code) {}
 
+/**
+ * 
+ */
 					SrvExc::ServerException(errco code, const std::string& message)
 						:	IRCException(format(code, message)),
 							_code(code) {}
 
+/**
+ * 
+ */
 					SrvExc::~ServerException() throw() {}
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------           UTILITY          ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 const std::string	SrvExc::format(errco code) {
 	std::string msg;
 	
@@ -42,7 +69,10 @@ const std::string	SrvExc::format(errco code) {
 	msg = prefixArr[i].str;
 	return (ERROR + msg + EOM);
 }
- 
+
+/**
+ * 
+ */
 const std::string	SrvExc::format(errco code, const std::string& sufix) {
 	std::string msg;
 	
@@ -59,3 +89,9 @@ const std::string	SrvExc::format(errco code, const std::string& sufix) {
 	msg = prefixArr[i].str;
 	return (ERROR + msg + sufix + EOM);
 }
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------             END            ---------------------- */
+
+/* ------------------------------------------------------------------------ */

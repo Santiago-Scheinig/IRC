@@ -3,9 +3,12 @@
 
 # include "IRCException.hpp"
 
-# include <string> 
 # include <map>
+# include <string> 
 
+/**
+ * 
+ */
 class ServerException : virtual public IRCException {
 
 	public:

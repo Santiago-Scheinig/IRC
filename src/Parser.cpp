@@ -1,18 +1,39 @@
 #include "Parser.hpp"
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------      STATIC FUNCTION       ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 Message		Parser::processInput(const std::string &line) {
 	
 	if (line.empty())
-		throw CliExc(CliExc::EMPTY_MESSAGE);
+		throw CliExc(CliExc::EMPTY_MESSAGE, "message is empty");
 	
 	return (_parseLine(line));
 }
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------       PARSER UTILITY       ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 void		Parser::_skipSpaces(const std::string &line, std::size_t &pos) {
 	while (pos < line.size() && line[pos] == ' ')
 		pos++;
 }
 
+/**
+ * 
+ */
 void		Parser::_readPrefix(const std::string &line, std::size_t &pos, std::string &prefix) {
 	std::size_t	space;
 
@@ -22,33 +43,41 @@ void		Parser::_readPrefix(const std::string &line, std::size_t &pos, std::string
 	space = line.find(' ', pos);
 	
 	if (space == std::string::npos || space == pos + 1)
-		throw CliExc(CliExc::MALFORMED_COMMAND, "A");
+		throw CliExc(CliExc::MALFORMED_COMMAND, "[missing information]");
 	
 	prefix = line.substr(pos + 1, space - pos - 1);
 	pos = space + 1;
 }
 
+/**
+ * 
+ */
 void		Parser::_readCommand(const std::string &line, std::size_t &pos, std::string &cmd) {
 	std::size_t	space;
 
 	_skipSpaces(line, pos);
 	
 	if (pos >= line.size() || line[pos] == ':')
-		throw CliExc(CliExc::MALFORMED_COMMAND, "B");
+		throw CliExc(CliExc::MALFORMED_COMMAND, "[missing information]");
 	space = line.find(' ', pos);
 	
-	if (space == std::string::npos)
+	if (space == std::string::npos) {
 		cmd = line.substr(pos);
+		pos = line.size();
+	}
 	else {
 		cmd = line.substr(pos, space - pos);
 		pos = space + 1;
 	}
 	if (cmd.empty())
-		throw CliExc(CliExc::MALFORMED_COMMAND, "C");
+		throw CliExc(CliExc::MALFORMED_COMMAND, "[missing information]");
 	
 	cmd = _toUpper(cmd);
 }
 
+/**
+ * 
+ */
 void		Parser::_readParams(const std::string &line, std::size_t &pos, std::vector<std::string> &params, std::string &trailing, bool &hasTrailing) {
 	std::size_t	space;
 
@@ -56,7 +85,7 @@ void		Parser::_readParams(const std::string &line, std::size_t &pos, std::vector
 	
 		_skipSpaces(line, pos);
 	
-		if (pos >= line.size())
+		if (pos >= line.size()) 
 			break;
 	
 		if (line[pos] == ':') {
@@ -77,6 +106,9 @@ void		Parser::_readParams(const std::string &line, std::size_t &pos, std::vector
 	}
 }
 
+/**
+ * 
+ */
 Message		Parser::_parseLine(const std::string &line) {
 	std::vector<std::string>	params;
 	std::string					prefix;
@@ -96,6 +128,9 @@ Message		Parser::_parseLine(const std::string &line) {
 	return (Message(prefix, command, params, trailing, hasTrailing));
 }
 
+/**
+ * 
+ */
 std::string	Parser::_toUpper(const std::string &cmd) {
 	std::string tmp = cmd;
 
@@ -104,3 +139,9 @@ std::string	Parser::_toUpper(const std::string &cmd) {
 	
 	return (tmp);
 }
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------             END            ---------------------- */
+
+/* ------------------------------------------------------------------------ */

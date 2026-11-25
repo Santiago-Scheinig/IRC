@@ -12,10 +12,22 @@
 
 #include "Config.hpp"
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------        CONSTRUCTORS        ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
                     Config::Config() {
     throw SrvExc(SrvExc::CONFIG_LOAD_FAILED);
 }
 
+/**
+ * 
+ */
                     Config::Config(int argc, char **argv) {
     if (argc != 3)
         throw SrvExc(SrvExc::CONFIG_INVALID, "./irc <port> <password>");
@@ -25,10 +37,16 @@
     initSignalHandler();
 }
 
+/**
+ * 
+ */
                     Config::Config(const Config &other){
     *this = other;
 }
 
+/**
+ * 
+ */
 Config              &Config::operator=(const Config &other){
     if (this != &other) {
         _port = other._port;
@@ -37,8 +55,20 @@ Config              &Config::operator=(const Config &other){
     return (*this);
 }
 
+/**
+ * 
+ */
                     Config::~Config() throw() {}
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------           PARSER           ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 void                Config::parsePort(const std::string &s) {
     std::size_t         size = s.size();
 
@@ -58,6 +88,9 @@ void                Config::parsePort(const std::string &s) {
         throw SrvExc(SrvExc::CONFIG_INVALID, "port values: [1 - 65535]");
 }
 
+/**
+ * 
+ */
 void                Config::parsePassword(const std::string &s) {
     std::size_t         size = s.size();
     
@@ -72,11 +105,24 @@ void                Config::parsePassword(const std::string &s) {
     _pass = s;
 }
 
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------        INITIALIZERS        ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 void			    Config::signalHandler(int signum) {
 	if (signum == SIGINT)
 		g_shutdown = 1;
 }
 
+/**
+ * 
+ */
 void                Config::initSignalHandler() {
 	struct sigaction	sa;
 	struct sigaction	sa_pipe;
@@ -99,10 +145,28 @@ void                Config::initSignalHandler() {
 	}
 }
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------           GETTERS          ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 const std::string   &Config::getPassword() const throw() {
     return (_pass);
 }
 
+/**
+ * 
+ */
 int                 Config::getPort() const throw() {
     return (_port);
 }
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------            END             ---------------------- */
+
+/* ------------------------------------------------------------------------ */

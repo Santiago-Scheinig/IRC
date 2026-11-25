@@ -16,16 +16,23 @@
 # include "ServerException.hpp"
 
 # include <string>
-# include <cctype>
-# include <cstring>
-# include <csignal>
 # include <sstream>
 # include <iostream>
+
+# include <cctype>
+# include <cerrno>
+# include <cstring>
+# include <csignal>
  
 extern volatile	sig_atomic_t	g_shutdown;
 
+/**
+ * 
+ */
 class Config {
+   
     private:
+     
         int                 _port;
         std::string         _pass;
 

@@ -5,6 +5,9 @@
 # include "Server.hpp"
 # include "Message.hpp"
 
+/**
+ * 
+ */
 class ICommand {
 
     public:

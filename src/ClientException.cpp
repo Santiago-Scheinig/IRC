@@ -1,5 +1,8 @@
 #include "ClientException.hpp"
 
+/**
+ * 
+ */
 static const CliExc::prefix	prefixArr[] = {
 	{CliExc::CONNECTION_ACCEPT_FAILED, "Failed to accept client connection: "},
 	{CliExc::CONNECTION_READ_FAILED, "Failed to read from client connection: "},
@@ -32,16 +35,40 @@ static const CliExc::prefix	prefixArr[] = {
 	{CliExc::END, "Invalid client errco: "}
 };
  
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------        CONSTRUCTORS        ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 					CliExc::ClientException(errco code) 
 						:	IRCException(format(code)),
 							_code(code) {}
 
+/**
+ * 
+ */
 					CliExc::ClientException(errco code, const std::string& message)
 						:	IRCException(format(code, message)),
 							_code(code) {}
 
+/**
+ * 
+ */
 					CliExc::~ClientException() throw() {}
 
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------           UTILITY          ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
 const std::string	CliExc::format(errco code) {
 	std::string msg;
 	
@@ -59,6 +86,9 @@ const std::string	CliExc::format(errco code) {
 	return (INFO + msg + EOM);
 }
 
+/**
+ * 
+ */
 const std::string	CliExc::format(errco code, const std::string& sufix) {
 	std::string msg;
 
@@ -75,3 +105,22 @@ const std::string	CliExc::format(errco code, const std::string& sufix) {
 	msg = prefixArr[i].str;
 	return (INFO + msg + sufix + EOM);
 }
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------          GETTERS           ---------------------- */
+
+/* ------------------------------------------------------------------------ */
+
+/**
+ * 
+ */
+CliExc::errco		CliExc::getCode() {
+	return (_code);
+}
+
+/* ------------------------------------------------------------------------ */
+
+/* ----------------------            END             ---------------------- */
+
+/* ------------------------------------------------------------------------ */

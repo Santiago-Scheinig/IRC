@@ -6,11 +6,15 @@
 # define CLEAN "\033[0m"
 # define EOM "\033[0m\n"
 
-# include <ctime>
 # include <string>
 # include <sstream> 
 # include <exception>
 
+# include <ctime>
+
+/**
+ * 
+ */
 class IRCException : virtual public std::exception {
 
 	public:

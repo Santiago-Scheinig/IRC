@@ -4,8 +4,11 @@
 # include <string>
 # include <vector>
 
-class Message
-{
+/**
+ * 
+ */
+class Message {
+	
 	private:
 
 		std::string						_prefix; 

@@ -1,13 +1,11 @@
 #include "Socket.hpp"
 
-#include <cstdio>
-#include <iostream>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string>
-
+/**
+ * 
+ */
 static const Socket::prefix prefixArr[] = {
-    // CONNECTION REGISTRATION
+    
+	// CONNECTION REGISTRATION
     {Socket::RPL_WELCOME,            "Welcome to the Internet Relay Network "},
     {Socket::RPL_YOURHOST,           "Your host is "},
     {Socket::RPL_CREATED,            "This server was created "},
@@ -32,7 +30,6 @@ static const Socket::prefix prefixArr[] = {
     {Socket::ERR_NOSUCHCHANNEL,      "No such channel"},
     {Socket::ERR_CANNOTSENDTOCHAN,   "Cannot send to channel"},
     {Socket::ERR_TOOMANYCHANNELS,    "You have joined too many channels"},
-
     {Socket::ERR_NOORIGIN,           "No origin specified"},
 	{Socket::ERR_INVALIDCAP, 		 "Invalid CAP command"},
     {Socket::ERR_NORECIPIENT,        "No recipient given"},
@@ -49,7 +46,6 @@ static const Socket::prefix prefixArr[] = {
     {Socket::ERR_USERNOTINCHANNEL,   "They aren't on that channel"},
     {Socket::ERR_NOTONCHANNEL,       "You're not on that channel"},
     {Socket::ERR_USERONCHANNEL,      "is already on channel"},
-
     {Socket::ERR_CHANNELISFULL,      "Cannot join channel (+l)"},
     {Socket::ERR_INVITEONLYCHAN,     "Cannot join channel (+i)"},
     {Socket::ERR_BANNEDFROMCHAN,     "Cannot join channel (+b)"},
@@ -187,26 +183,33 @@ bool	Socket::dataSend() {
 /**
  *
  */
-std::string	Socket::newReply(const replyco code, const std::string& detail) {
-	std::vector<std::string>::const_iterator	it;
-	std::ostringstream							reply;
+std::string Socket::newReply(const replyco code, const std::string &text) {
+    std::ostringstream  reply;
+    std::string         def;
 
-	int 										i = 0;
+    for (int i = 0; prefixArr[i].code != END; ++i) {
 
-	reply << ":" << SERVER_NAME << " " << std::setw(3) << std::setfill('0') << static_cast<int>(code) << " " << _nickname << " ";
-
-	while (prefixArr[i].code != END) {
-    	if (prefixArr[i].code == code) {
-			break;
+		if (prefixArr[i].code == code) {
+			def = prefixArr[i].str; 
+			break; 
 		}
-		i++;
-    }
+	}
+		
+    std::string			&t = def;
+	std::string			target = "*";
 
-	if (prefixArr[i].code == END)
-		reply << ":" << detail << " " << prefixArr[i].str << " " << "\r\n";
-	else
-		reply << ":" << detail << "\r\n";
-	return (reply.str());
+	if (!text.empty())
+		t = text;
+
+	if (!_nickname.empty())
+		target = _nickname;
+
+    reply << ":" << SERVER_NAME << " " << std::setw(3) << std::setfill('0') << static_cast<int>(code) << " " << target;
+    
+	if (!t.empty())
+		reply << " :" << t;
+    reply << "\r\n";
+    return (reply.str());
 }
 
 /* ------------------------------------------------------------------------ */
@@ -215,26 +218,44 @@ std::string	Socket::newReply(const replyco code, const std::string& detail) {
 
 /* ------------------------------------------------------------------------ */
 
+/**
+ * 
+ */
 void	Socket::setNickname(const std::string &str) {
 	_nickname = str;
 }
 
+/**
+ * 
+ */
 void	Socket::setUsername(const std::string &str) {
 	_username = str;
 }
 
+/**
+ * 
+ */
 void	Socket::setRealname(const std::string &str) {
 	_realname = str;
 }
 
+/**
+ * 
+ */
 void	Socket::setRegistered(bool ans) {
 	_registered = ans;
 }
 
+/**
+ * 
+ */
 void	Socket::setPass(bool ans) {
 	_hasPass = ans;
 }
 
+/**
+ * 
+ */
 void	Socket::setClosing() {
 	_closing = true;
 	_pollFD.events &= ~POLLIN;
@@ -246,42 +267,72 @@ void	Socket::setClosing() {
 
 /* ------------------------------------------------------------------------ */
 
+/**
+ * 
+ */
 const std::string		&Socket::getNickname() const throw() {
 	return (_nickname);
 }
 
+/**
+ * 
+ */
 const std::string		&Socket::getUsername() const throw() {
 	return (_username);
 }
 
+/**
+ * 
+ */
 const std::string		&Socket::getRealname() const throw() {
 	return (_realname);
 }
 
+/**
+ * 
+ */
 const struct pollfd		&Socket::getPollFD() const throw() {
 	return (_pollFD);
 }
 
+/**
+ * 
+ */
 const int				&Socket::getFD() const throw() {
 	return (_pollFD.fd);
 }
 
+/**
+ * 
+ */
 const std::string		&Socket::getIP() const throw() {
 	return (_ip);
 }
 
+/**
+ * 
+ */
 bool					Socket::hasPendingOutput() const throw() {
 	return !(_buffOut.empty());
 }
 
+/**
+ * 
+ */
 bool					Socket::hasPass() const throw() {
 	return (_hasPass);
 }
 
+/**
+ * 
+ */
 bool					Socket::isRegistered() const throw() {
 	return (_registered);
 }
 
+/**
+ * 
+ */
 bool					Socket::isClosing() const throw() {
 	return (_closing);
 }

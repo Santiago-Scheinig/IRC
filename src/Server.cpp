@@ -1,4 +1,3 @@
-#include "CommandRegistry.hpp"
 #include "Server.hpp"
 
 /* ------------------------------------------------------------------------ */
@@ -17,7 +16,6 @@
     
 	initFDS(initAddr(initSocket()));
 }
-
 
 /**
  * 
@@ -162,7 +160,6 @@ void	Server::run() {
 				manageClient(client_it, pollArr[i].revents);
 			}
 			catch (const ClientException &e) {
-			
 				std::cout << e.what();
 				deleteClient(client_it);
 			}
@@ -273,7 +270,7 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 	bool		alive = true;
 	
 	if (revents & POLLNVAL)
-		throw CliExc(CliExc::INVALID_CLIENT_STATE);
+		throw CliExc(CliExc::INVALID_CLIENT_STATE, "invalid client state");
 	
 	if (revents & (POLLIN | POLLHUP | POLLERR) && !client->isClosing()) {
 
@@ -283,16 +280,20 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 
 			if (line.empty())
 				continue;
-
-			CommandRegistry::exe(Parser::processInput(line), *this, *client);
+			try {
+				CommandRegistry::exe(Parser::processInput(line), *this, *client);
+			}
+			catch (const ClientException& e){
+				std::cout << e.what();
+			}
 		}
 	}
 	
 	if (alive && (revents & POLLOUT))
 		alive = client->dataSend();
-	
+
 	if (!alive || (revents & (POLLHUP | POLLERR)))
-		throw CliExc(CliExc::CONNECTION_LOST);
+		throw CliExc(CliExc::CONNECTION_LOST, "Client disconnected");
 }
 
 /**
@@ -311,15 +312,21 @@ void	Server::deleteClient(std::map<int, Socket*>::iterator client_it) {
 
 /* ------------------------------------------------------------------------ */
 
+/**
+ * 
+ */
 Channel	*Server::getChannel(const std::string &name) const {
 	std::map<std::string, Channel *>::const_iterator it =	_channelArr.find(name);
 	
 	if (it == _channelArr.end())
-		throw CliExc(CliExc::CHANNEL_NOT_FOUND);
+		throw CliExc(CliExc::CHANNEL_NOT_FOUND, name);
 
 	return (it->second);
 }
 
+/**
+ * 
+ */
 Channel	*Server::getOrCreate(const std::string &name) {
 	std::map<std::string, Channel *>::iterator it = _channelArr.find(name);
 	
@@ -332,17 +339,23 @@ Channel	*Server::getOrCreate(const std::string &name) {
 	return (channel);
 }
 
+/**
+ * 
+ */
 void 	Server::removeChannel(const std::string &name) {
 	std::map<std::string, Channel *>::iterator it =	_channelArr.find(name);
 	
 	if (it == _channelArr.end())
-		throw CliExc(CliExc::CHANNEL_NOT_FOUND);
+		throw CliExc(CliExc::CHANNEL_NOT_FOUND, name);
 	
 	delete it->second;
 	_channelArr.erase(it);
 }
 
-Socket *Server::findClientByNick(const std::string &nick) const {
+/**
+ * 
+ */
+Socket	*Server::findClientByNick(const std::string &nick) const {
    
 	for (std::map<int, Socket *>::const_iterator it = _clientArr.begin(); it != _clientArr.end(); ++it)
         if (it->second->getNickname() == nick)
@@ -350,6 +363,9 @@ Socket *Server::findClientByNick(const std::string &nick) const {
     return (NULL);
 }
 
+/**
+ * 
+ */
 void	Server::removeClientFromChannels(Socket *client) {
 	std::string 								prefix = client->getNickname() + "!" + client->getUsername() + "@" + client->getIP();
 	std::string 								msg = ":" + prefix + " QUIT :Client Quit\r\n";
@@ -364,14 +380,13 @@ void	Server::removeClientFromChannels(Socket *client) {
 			continue;
 		}
 		
-		channel->removeMember(client);
-		channel->broadcast(msg, NULL);//Which message?
-		
 		if (channel->isEmpty()) {
 			++it;
 			continue;
 		}
 		
+		channel->removeMember(client);
+		channel->broadcast(msg, NULL);
 		_channelArr.erase(it++);
 		delete channel;
 	}

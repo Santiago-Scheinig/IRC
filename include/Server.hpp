@@ -10,6 +10,8 @@
 # include "Channel.hpp"
 # include "ServerException.hpp"
 # include "ClientException.hpp"
+# include "CommandRegistry.hpp"
+
 
 # include <map> 
 # include <vector>
@@ -25,6 +27,9 @@
 # include <arpa/inet.h>
 # include <netinet/in.h>
 
+/**
+ * 
+ */
 class Server {
 
 	private:
@@ -60,10 +65,13 @@ class Server {
 		void 								run();
 
 		bool 								matchPassword(const std::string &pass) const throw();
+
 		Channel 							*getChannel(const std::string &name) const;
 		Channel 							*getOrCreate(const std::string &name);
-		void 								removeChannel(const std::string &name);
+
 		Socket 								*findClientByNick(const std::string &nick) const;
+
+		void 								removeChannel(const std::string &name);
 		void 								removeClientFromChannels(Socket *client);
 };
 
