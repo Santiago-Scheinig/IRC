@@ -12,7 +12,6 @@
 # include "ClientException.hpp"
 # include "CommandRegistry.hpp"
 
-
 # include <map> 
 # include <vector>
 # include <cerrno>

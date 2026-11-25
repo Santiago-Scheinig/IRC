@@ -72,16 +72,16 @@ void CapCommand::execute(const Message &msg, Server &, Socket &client) {
 void PassCommand::execute(const Message &msg, Server &server, Socket &client) {
     const std::vector<std::string> &p = msg.getParams();
 
-    if (client.hasPass())
+    if (client.hasPass() || client.isRegistered())
         client.queueOutput(client.newReply(Socket::ERR_ALREADYREGISTERED, ""));
     else if (p.empty() || p[0].empty())
         client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) PASS <password>"));
     else if (!server.matchPassword(p[0])) {
         client.queueOutput(client.newReply(Socket::ERR_PASSMISMATCH, ""));
-        client.setClosing();
     }
-    client.setPass(true);
-    if (!client.isRegistered() && !client.getNickname().empty()) {
+    else
+        client.setPass(true);
+    if (!client.isRegistered() && !client.getNickname().empty() && client.hasPass()) {
         client.setRegistered(true);
         client.queueOutput(client.newReply(Socket::RPL_WELCOME, ""));
         client.queueOutput(client.newReply(Socket::RPL_YOURHOST, "42_IRC"));
@@ -97,6 +97,10 @@ void PassCommand::execute(const Message &msg, Server &server, Socket &client) {
 
 /* ------------------------------------------------------------------------ */
 
+/**
+ * When nick changes, need to loop channels and find each of the channels nick belongs to
+ * then, notify the change of nickname to all the members on that channel (excepting the client itself)
+ */
 void NickCommand::execute(const Message &msg, Server &server, Socket &client) {
     const std::vector<std::string>  &p = msg.getParams();
 
@@ -234,6 +238,9 @@ void JoinCommand::execute(const Message &msg, Server &server, Socket &client) {
 
 /* ------------------------------------------------------------------------ */
 
+/**
+ * Needs to anser when no channel has been found. Try catch doesnt seem to be working.
+ */
 void PartCommand::execute(const Message &msg, Server &server, Socket &client) {
     
     if (!client.isRegistered())
@@ -776,9 +783,9 @@ void CommandRegistry::exe(const Message &msg, Server &server, Socket &client) {
         UserCommand command;
         command.execute(msg, server, client);
     }
-    else if (client.isRegistered())     {
+    else {
         if (!client.hasPass()) {
-            client.queueOutput(client.newReply(Socket::ERR_PASSMISMATCH, ". You need to instert the server password to proceed. [usage] PASS <password>"));
+            client.queueOutput(client.newReply(Socket::ERR_PASSMISMATCH, "You need to instert the server password to proceed. (usage) PASS <password>"));
             return;
         }
         if (cmd == "JOIN") {

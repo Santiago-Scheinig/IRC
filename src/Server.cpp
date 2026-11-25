@@ -285,6 +285,8 @@ void	Server::manageClient(std::map<int, Socket*>::iterator client_it, short reve
 			}
 			catch (const ClientException& e){
 				std::cout << e.what();
+				//This should be numeric specific replies depending on the replyco
+				client->queueOutput(client->newReply(Socket::ERR_UNKNOWNCOMMAND, e.what()));
 			}
 		}
 	}

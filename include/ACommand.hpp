@@ -18,4 +18,71 @@ class ACommand : public ICommand {
         virtual ~ACommand() {}
 };
 
+class PassCommand : public ACommand {
+
+    public:
+
+        void execute(const Message &msg, Server &server, Socket &client);
+
+};
+
+class NickCommand : public ACommand {
+    
+    public:
+
+        void execute(const Message &msg, Server &server, Socket &client);
+
+};
+
+
+class CapCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &, Socket &client);
+};
+
+class UserCommand : public ACommand {
+    public:
+       void execute(const Message &msg, Server &, Socket &client);
+};
+
+class JoinCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class PartCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class PrivmsgCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class QuitCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class TopicCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class ModeCommand : public ACommand {
+    public:
+       void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class KickCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
+class InviteCommand : public ACommand {
+    public:
+        void execute(const Message &msg, Server &server, Socket &client);
+};
+
 #endif

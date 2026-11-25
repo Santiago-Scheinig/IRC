@@ -2,8 +2,9 @@
 # define ICOMMAND_HPP
 
 # include "Socket.hpp"
-# include "Server.hpp"
 # include "Message.hpp"
+
+class Server;
 
 /**
  * 
