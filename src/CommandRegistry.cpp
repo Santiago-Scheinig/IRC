@@ -81,6 +81,13 @@ void PassCommand::execute(const Message &msg, Server &server, Socket &client) {
         client.setClosing();
     }
     client.setPass(true);
+    if (!client.isRegistered() && !client.getNickname().empty()) {
+        client.setRegistered(true);
+        client.queueOutput(client.newReply(Socket::RPL_WELCOME, ""));
+        client.queueOutput(client.newReply(Socket::RPL_YOURHOST, "42_IRC"));
+        client.queueOutput(client.newReply(Socket::RPL_CREATED, "by 42Students"));
+        client.queueOutput(client.newReply(Socket::RPL_MYINFO, client.getNickname()));
+    }
     return;
 }
 
@@ -129,14 +136,7 @@ void NickCommand::execute(const Message &msg, Server &server, Socket &client) {
         std::string                 reply = oldPrefix + " NICK :" + nick + "\r\n";
         
         client.queueOutput(reply);
-    }
 
-    if (!client.isRegistered() && !client.getUsername().empty()) {
-        client.setRegistered(true);
-        client.queueOutput(client.newReply(Socket::RPL_WELCOME, "42"));
-        client.queueOutput(client.newReply(Socket::RPL_YOURHOST, "42_IRC"));
-        client.queueOutput(client.newReply(Socket::RPL_CREATED, "by 42Students"));
-        client.queueOutput(client.newReply(Socket::RPL_MYINFO, client.getNickname()));//Could be a getInfo instead;
     }
 }
 
@@ -169,14 +169,6 @@ void UserCommand::execute(const Message &msg, Server &, Socket &client) {
         realname = p[2];
 
     client.setRealname(realname);
-
-    if (!client.isRegistered() && !client.getNickname().empty()) {
-        client.setRegistered(true);
-        client.queueOutput(client.newReply(Socket::RPL_WELCOME, ""));
-        client.queueOutput(client.newReply(Socket::RPL_YOURHOST, "42_IRC"));
-        client.queueOutput(client.newReply(Socket::RPL_CREATED, "by 42Students"));
-        client.queueOutput(client.newReply(Socket::RPL_MYINFO, client.getNickname()));//Could be a getInfo instead;
-    }
 }
 
 /* ------------------------------------------------------------------------ */
@@ -187,7 +179,7 @@ void UserCommand::execute(const Message &msg, Server &, Socket &client) {
 
 void JoinCommand::execute(const Message &msg, Server &server, Socket &client) {
     
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -231,6 +223,8 @@ void JoinCommand::execute(const Message &msg, Server &server, Socket &client) {
             client.queueOutput(client.newReply(Socket::RPL_NOTOPIC, ""));
         else
             client.queueOutput(client.newReply(Socket::RPL_TOPIC, channel->getTopic()));
+        client.queueOutput(client.newReply(Socket::RPL_NAMREPLY, "channel->getMemberList()"));
+        client.queueOutput(client.newReply(Socket::RPL_ENDOFNAMES, "End of /NAMES list"));
     }
 }
 
@@ -242,7 +236,7 @@ void JoinCommand::execute(const Message &msg, Server &server, Socket &client) {
 
 void PartCommand::execute(const Message &msg, Server &server, Socket &client) {
     
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -291,7 +285,7 @@ void PartCommand::execute(const Message &msg, Server &server, Socket &client) {
 /* ------------------------------------------------------------------------ */
 
 void PrivmsgCommand::execute(const Message &msg, Server &server, Socket &client) {
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -367,7 +361,7 @@ void QuitCommand::execute(const Message &msg, Server &server, Socket &client) {
   
 void TopicCommand::execute(const Message &msg, Server &server, Socket &client) {
     
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -416,21 +410,40 @@ void TopicCommand::execute(const Message &msg, Server &server, Socket &client) {
 /* ------------------------------------------------------------------------ */
 
 void ModeCommand::execute(const Message &msg, Server &server, Socket &client) {
-    
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
 
     if (p.empty()) {
-        client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <target> [:modes] [:parameters]"));
+        client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <channel> <modes> [parameters]"));
         return;
     }
 
-    Channel *channel = server.getChannel(p[0]);
+    Channel *channel = NULL;
 
-    if (!channel) {
+    try {
+        channel = server.getChannel(p[0]);
+    }
+    catch (const ClientException &) {
         client.queueOutput(client.newReply(Socket::ERR_NOSUCHCHANNEL, p[0]));
+        return;
+    }
+
+    if (p.size() == 1) {
+
+        std::string parameters;
+
+        if (!channel->getKey().empty())
+            parameters += " " + channel->getKey();
+
+        if (channel->getLimit() > 0) {
+            std::ostringstream limit;
+            limit << channel->getLimit();
+            parameters += " " + limit.str();
+        }
+
+        client.queueOutput(client.newReply(Socket::RPL_CHANNELMODEIS, p[0] + " " + parameters));
         return;
     }
 
@@ -444,31 +457,195 @@ void ModeCommand::execute(const Message &msg, Server &server, Socket &client) {
         return;
     }
 
-    if (p.size() < 2)
+    const std::string &modeString = p[1];
+
+    if (modeString.empty() || (modeString[0] != '+' && modeString[0] != '-'))
         return;
 
-    if (p[1].size() == 2 &&
-        p[1][0] == '+' && p[1][1] == 'o') {
+    bool adding = true;
 
-        if (p.size() < 3) {
-            client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <target> [:modes] [:parameters]"));
-            return;
+    std::string appliedModes;
+    std::string appliedParams;
+
+    std::string replyPrefix = prefix(client);
+
+    std::string currentPrefix = replyPrefix + " MODE " + p[0] + " ";
+
+    std::string finalModes;
+
+    size_t paramIndex = 2;
+
+    for (size_t i = 0; i < modeString.size(); ++i) {
+
+        char mode = modeString[i];
+
+        if (mode == '+') {
+            adding = true;
+            continue;
         }
 
-        Socket *target = server.findClientByNick(p[2]);
-
-        if (!target || !channel->hasMember(target)) {
-            client.queueOutput(client.newReply(Socket::ERR_USERNOTINCHANNEL, target->getNickname()));
-            return;
+        if (mode == '-') {
+            adding = false;
+            continue;
         }
 
-        channel->addOperator(target);
+        bool changed = false;
 
-        std::string reply = prefix(client) + " MODE " + p[0] + " +o " + p[2] + "\r\n";
+        if (mode == 'i') {
 
-        channel->broadcast(reply, NULL);
-        return;
+            if (channel->getInviteOnly() != adding) {
+
+                channel->setInviteOnly(adding);
+                changed = true;
+            }
+        }
+        else if (mode == 't') {
+
+            if (channel->isTopicRestricted() != adding) {
+
+                channel->setTopicRestricted(adding);
+                changed = true;
+            }
+        }
+        else if (mode == 'k') {
+
+            if (adding) {
+
+                if (paramIndex >= p.size()) {
+                    client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <channel> +k <key>"));
+                    return;
+                }
+
+                const std::string &key = p[paramIndex++];
+
+                if (channel->getKey() != key) {
+
+                    channel->setKey(key);
+                    changed = true;
+
+                    appliedParams += " " + key;
+                }
+            }
+            else {
+
+                if (!channel->getKey().empty()) {
+                    changed = true;
+                }
+
+                if (paramIndex < p.size())
+                    ++paramIndex;
+            }
+        }
+        else if (mode == 'o') {
+
+            if (paramIndex >= p.size()) {
+
+                client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <channel> +/-o <nickname>"));
+                return;
+            }
+
+            const std::string &nickname = p[paramIndex++];
+
+            Socket *target = server.findClientByNick(nickname);
+
+            if (!target) {
+
+                client.queueOutput(client.newReply(Socket::ERR_NOSUCHNICK, nickname));
+                continue;
+            }
+
+            if (!channel->hasMember(target)) {
+
+                client.queueOutput(client.newReply(Socket::ERR_USERNOTINCHANNEL, nickname));
+                continue;
+            }
+
+            if (adding) {
+
+                if (!channel->isOperator(target)) {
+
+                    channel->addOperator(target);
+                    changed = true;
+                }
+            }
+            else {
+
+                if (channel->isOperator(target)) {
+
+                    channel->removeOperator(target);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                appliedParams += " " + nickname;
+        }
+
+        else if (mode == 'l') {
+
+            if (adding) {
+
+                if (paramIndex >= p.size()) {
+
+                    client.queueOutput(client.newReply(Socket::ERR_NEEDMOREPARAMS, "(usage) MODE <channel> +l <limit>"));
+                    return;
+                }
+
+                const std::string &value = p[paramIndex++];
+
+                char *end = NULL;
+
+                long limit = std::strtol(value.c_str(), &end, 10);
+
+                if (end == value.c_str() || *end != '\0' || limit <= 0 || limit > INT_MAX)
+                    continue;
+
+                if (static_cast<long>(channel->getLimit()) != limit) {
+                    channel->setLimit(static_cast<int>(limit));
+                    changed = true;
+                    appliedParams += " " + value;
+                }
+            }
+            else {
+
+                if (channel->getLimit() > 0) {
+                    changed = true;
+                }
+            }
+        }
+
+        else {
+
+            std::ostringstream error;
+
+            error << mode;
+
+            client.queueOutput(client.newReply(Socket::ERR_UNKNOWNMODE, mode + "is unknown mode char to me"));
+            continue;
+        }
+
+        if (changed) {
+
+            if (finalModes.empty() || finalModes[finalModes.size() - 1] != (adding ? '+' : '-')) {
+
+                finalModes += adding ? "+" : "-";
+            }
+
+            finalModes += mode;
+        }
     }
+
+    if (finalModes.empty())
+        return;
+
+    std::string reply = currentPrefix + finalModes;
+
+    if (!appliedParams.empty())
+        reply += appliedParams;
+
+    reply += "\r\n";
+
+    channel->broadcast(reply, NULL);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -479,7 +656,7 @@ void ModeCommand::execute(const Message &msg, Server &server, Socket &client) {
 
 void KickCommand::execute(const Message &msg, Server &server, Socket &client) {
 
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -535,7 +712,7 @@ void KickCommand::execute(const Message &msg, Server &server, Socket &client) {
 
 void InviteCommand::execute(const Message &msg, Server &server, Socket &client) {
         
-    if (!registered(client))
+    if (!client.isRegistered())
         return;
 
     const std::vector<std::string> &p = msg.getParams();
@@ -548,7 +725,7 @@ void InviteCommand::execute(const Message &msg, Server &server, Socket &client) 
     Socket *target = server.findClientByNick(p[0]);
 
     if (!target) {
-        client.queueOutput(client.newReply(Socket::ERR_NOSUCHNICK, target->getNickname()));
+        client.queueOutput(client.newReply(Socket::ERR_NOSUCHNICK, p[0]));
         return;
     }
 
@@ -565,7 +742,7 @@ void InviteCommand::execute(const Message &msg, Server &server, Socket &client) 
     }
 
     if (channel->hasMember(target)) {
-        client.queueOutput(client.newReply(Socket::ERR_USERONCHANNEL, target->getNickname()));
+        client.queueOutput(client.newReply(Socket::ERR_USERONCHANNEL, p[0]));
         return;
     }
 
@@ -599,7 +776,7 @@ void CommandRegistry::exe(const Message &msg, Server &server, Socket &client) {
         UserCommand command;
         command.execute(msg, server, client);
     }
-    else {
+    else if (client.isRegistered())     {
         if (!client.hasPass()) {
             client.queueOutput(client.newReply(Socket::ERR_PASSMISMATCH, ". You need to instert the server password to proceed. [usage] PASS <password>"));
             return;

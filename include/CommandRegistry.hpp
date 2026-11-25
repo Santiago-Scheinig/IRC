@@ -10,6 +10,7 @@
 # include <sstream>
 # include <vector>
 # include <cstdlib>
+# include <climits>
 
 class CommandRegistry {
     
