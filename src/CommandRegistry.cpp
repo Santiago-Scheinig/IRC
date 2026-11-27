@@ -692,7 +692,11 @@ void KickCommand::execute(const Message &msg, Server &server, Socket &client) {
 
     Socket *target = server.findClientByNick(p[1]);
 
-    if (!target || !channel->hasMember(target)) {
+	if (!target){
+		client.queueOutput(client.newReply(Socket::ERR_NOSUCHNICK, p[0]));
+		return ;
+	}
+    if (!channel->hasMember(target)) {
         client.queueOutput(client.newReply(Socket::ERR_USERNOTINCHANNEL, target->getNickname()));
         return;
     }
